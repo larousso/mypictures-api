@@ -1,0 +1,20 @@
+option java_package = "com.adelegue.mypictures.domains.album";
+option optimize_for = SPEED;
+
+message Album {
+    required string id = 1;
+    required string username = 2;
+    required string title = 3;
+    optional string description = 4;
+    required int64 date = 5;
+}
+
+message AlbumCreated {
+    required Album album = 1;
+}
+message AlbumUpdated {
+    required Album album = 1;
+}
+message AlbumDeleted {
+    required string id = 1;
+}
