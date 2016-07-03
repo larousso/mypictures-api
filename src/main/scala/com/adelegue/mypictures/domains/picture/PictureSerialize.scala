@@ -21,7 +21,7 @@ class PictureSerialize extends SerializerWithStringManifest {
   val PictureUpdatedManifest = classOf[PictureUpdated].getName
   val PictureDeletedManifest = classOf[PictureDeleted].getName
 
-  def identifier = 1
+  def identifier = 3
 
   override def manifest(o: AnyRef): String = o.getClass.getName
 

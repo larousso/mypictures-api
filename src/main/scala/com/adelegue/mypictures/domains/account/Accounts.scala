@@ -3,7 +3,10 @@ package com.adelegue.mypictures.domains.account
 import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
 import com.adelegue.mypictures.validation.Validation.Result
 import cats.free.Free
+import com.adelegue.mypictures.domains.account.Accounts.Role.Admin
 import freek._
+import org.json4s.CustomSerializer
+import org.json4s.JsonAST.{JField, JObject, JString}
 
 /**
   * Created by adelegue on 24/05/2016.
@@ -16,6 +19,19 @@ object Accounts {
     for {
       add <- AddAccount(account).freek[PRG]
     } yield add
+
+  def createOrUpdateAccount(account: Account): Free[PRG#Cop, Result[Accounts.AccountAdded]] = {
+    import scalaz.Scalaz._
+    for {
+      a <- getAccountByUsername(account.username)
+      r <- a match {
+        case Some(a) => Free.pure[PRG#Cop, Result[Accounts.AccountAdded]](AccountAdded(account).successNel)
+        case None => for {
+          added <- addAccount(account)
+        } yield added
+      }
+    } yield r
+  }
 
   def getAccountByUsername(username: Username): Free[PRG#Cop, Option[Account]] =
     for {
@@ -47,6 +63,19 @@ object Accounts {
       case _           => Guest
     }
   }
+
+  class RoleSerializer extends CustomSerializer[Role](format => (
+    {
+      case JString(s) if s == Role.Admin.role =>
+        Role.Admin
+      case JString(s) if s == Role.Guest.role =>
+        Role.Guest
+      case JString(s) if s == Role.SuperGuest.role =>
+        Role.SuperGuest
+    }, {
+    case n: Role =>
+      JString(n.role)
+  }))
 
   sealed trait DSL[A]
 

@@ -16,7 +16,7 @@ class AlbumSerialize extends SerializerWithStringManifest {
   val AlbumUpdatedManifest = classOf[AlbumUpdated].getName
   val AlbumDeletedManifest = classOf[AlbumDeleted].getName
 
-  def identifier = 1
+  def identifier = 2
 
   override def manifest(o: AnyRef): String = o.getClass.getName
 
