@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % "2.4.6",
   "com.softwaremill.akka-http-session" %% "core" % "0.2.5",
   "com.softwaremill.akka-http-session" %% "jwt"  % "0.2.5",
+  "ch.megard" %% "akka-http-cors" % "0.1.2",
   "com.typesafe.akka" %% "akka-persistence-tck" % "2.4.6",
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
   "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",

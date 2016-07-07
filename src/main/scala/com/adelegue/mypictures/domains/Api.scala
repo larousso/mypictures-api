@@ -1,18 +1,21 @@
 package com.adelegue.mypictures.domains
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import cats._
 import com.adelegue.mypictures.domains.account.Accounts
-import com.adelegue.mypictures.domains.account.Accounts.Role.Admin
+import com.adelegue.mypictures.domains.account.Accounts.Role.{Admin, Guest}
 import com.adelegue.mypictures.domains.account.Accounts.{Role, _}
 import com.adelegue.mypictures.domains.album.Albums
 import com.adelegue.mypictures.domains.picture.{Images, Pictures}
-import org.json4s.JsonAST.{JField, JObject, JString}
+import com.typesafe.config.Config
+import org.json4s.JsonAST.JString
 import org.json4s.{CustomSerializer, DefaultFormats, jackson}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scalaz.{Failure, Success}
 
 /**
@@ -23,7 +26,8 @@ object Api {
   case class Action(rotation: Images.Rotation) extends Serializable
   case class LoginForm(login: String, password: String) extends Serializable
 
-  case class Session(username: Username, role: Role, sessionType: SessionType)
+  case class SessionUser(username: Username, role: Role, sessionType: SessionType)
+  case class Session(user: Option[SessionUser], redirect: Option[String] = None)
 
   sealed trait SessionType {
     def sessionType: String
@@ -48,13 +52,18 @@ object Api {
       JString(n.sessionType)
   }))
 
-  def apply(acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DSL ~> Future, pict: Pictures.DSL ~> Future)(implicit ec: ExecutionContext): Api = new Api(acc, alb, img, pict)(ec)
+  def apply(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DSL ~> Future, pict: Pictures.DSL ~> Future)(implicit system: ActorSystem, materializer: Materializer): Api = new Api(config, acc, alb, img, pict)(system, materializer)
 }
 
-class Api(acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DSL ~> Future, pict: Pictures.DSL ~> Future)(implicit ec: ExecutionContext) {
+class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DSL ~> Future, pict: Pictures.DSL ~> Future)(implicit system: ActorSystem, materializer: Materializer) {
 
   import cats.std.future._
+  import ch.megard.akka.http.cors.CorsDirectives._
+  import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
   import freek._
+  import system.dispatcher
+  implicit val serialization = jackson.Serialization
+  implicit val formats = DefaultFormats
 
   val accountInterpreter = acc
   val albumInterpreter = alb :&: accountInterpreter
@@ -65,17 +74,17 @@ class Api(acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DS
   } yield ()
 
   init.interpret(Interpreter(accountInterpreter))
+  val auth = Auth(config, acc)
 
-  def route(implicit materializer: Materializer) = {
-    val auth = Auth(acc)
-    import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
-    implicit val serialization = jackson.Serialization
-    implicit val formats = DefaultFormats
+  def route(): Route = cors() {
 
+    auth.facebookApi ~
     pathPrefix("api") {
         pathEnd {
           get {
-            complete("Ok")
+            auth.hashRole(Guest) {
+              complete("Ok")
+            }
           }
         } ~
           auth.loginApi ~
