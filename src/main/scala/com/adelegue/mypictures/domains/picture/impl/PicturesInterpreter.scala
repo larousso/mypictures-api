@@ -77,7 +77,7 @@ class PictureStoreActor extends PersistentActor {
     case GetPicture(id) =>
       sender ! state.pictures.get(id)
     case GetPictureByAlbum(id) =>
-      sender ! state.pictures.filter(p => p._2.album == id)
+      sender ! state.pictures.values.toList.filter(p => p.album == id)
     case "snap" => saveSnapshot(state)
     case "print" => println(state)
   }

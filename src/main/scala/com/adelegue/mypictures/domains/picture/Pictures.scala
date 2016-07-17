@@ -25,7 +25,7 @@ object Pictures {
           image <- Images.createImage(picture.id, content).expand[PRG]
           thumbnail <- Images.createThumbnail(picture.id, content).expand[PRG]
           created <- CreatePicture(picture).freek[PRG]
-        } yield created.map(p => PictureCreated(p.picture.copy(picture = Some(image.content), thumbnail = Some(thumbnail.content))))
+        } yield created
       )
     } yield created
 
@@ -33,15 +33,20 @@ object Pictures {
   def updatePicture(picture: Picture): Free[PRG#Cop, Result[PictureUpdated]] =
     for {
       updated <- UpdatePicture(picture).freek[PRG]
-      image <- readImage(picture.id)
-      thumbnail <- readThumbnail(picture.id)
-    } yield updated.map(p => PictureUpdated(p.picture.copy(picture = Some(image), thumbnail = Some(thumbnail))))
+    } yield updated
 
-  def rotatePicture(id: Id, rotation: Rotation): Free[PRG#Cop, Unit] = {
+  def rotatePicture(id: Id, rotation: Rotation): Free[PRG#Cop, Option[Picture]] = {
     for {
-      _ <- Images.rotateImage(id, rotation).expand[PRG]
-      _ <- Images.rotateThumbnail(id, rotation).expand[PRG]
-    } yield Unit
+      p <- getPicture(id)
+      _ <- p match {
+        case Some(_) =>
+          for {
+            _ <- Images.rotateImage(id, rotation).expand[PRG]
+            _ <- Images.rotateThumbnail(id, rotation).expand[PRG]
+          } yield Unit
+        case None => Free.pure[PRG#Cop, Unit](Unit)
+      }
+    } yield p
   }
 
   def deletePicture(id: Pictures.Id): Free[PRG#Cop, Result[PictureDeleted]] =
@@ -54,50 +59,25 @@ object Pictures {
   def getPicture(id: Pictures.Id): Free[PRG#Cop, Option[Picture]] =
     for {
       picture <- GetPicture(id).freek[PRG]
-      pictureWithImage <- picture match {
-        case Some(p) => for {
-          image <- readImage(id)
-          thumbnail <- readThumbnail(id)
-        } yield Some(p.copy(picture = Some(image), thumbnail = Some(thumbnail)))
-        case None => Free.pure[PRG#Cop, Option[Picture]](None)
-      }
-    } yield pictureWithImage
+    } yield picture
 
   def getPictureByAlbum(albumId: Albums.Id): Free[PRG#Cop, List[Picture]] = {
-    import cats.implicits._
     for {
       pictures <- GetPictureByAlbum(albumId).freek[PRG]
-      res <- pictures.traverseU(addImgAndThumbnail)
-    } yield res
+    } yield pictures
   }
 
   def getThumbnailsByAlbum(albumId: Albums.Id): Free[PRG#Cop, List[Picture]] = {
-    import cats.implicits._
     for {
       pictures <- GetPictureByAlbum(albumId).freek[PRG]
-      res <- pictures.traverseU(addThumbnail)
-    } yield res
+    } yield pictures
   }
 
   def listAll(): Free[PRG#Cop, List[Picture]] = {
-    import cats.implicits._
     for {
       pictures <- ListPictures.freek[PRG]
-      res <- pictures.traverseU(addImgAndThumbnail)
-    } yield res
+    } yield pictures
   }
-
-  def addImgAndThumbnail(p: Picture): Free[PRG#Cop, Picture] =
-    for {
-      image <- readImage(p.id)
-      thumbnail <- readThumbnail(p.id)
-    } yield p.copy(picture = Some(image), thumbnail = Some(thumbnail))
-
-  def addThumbnail(p: Picture): Free[PRG#Cop, Picture] =
-    for {
-      thumbnail <- readThumbnail(p.id)
-    } yield p.copy(thumbnail = Some(thumbnail))
-
 
   def readImage(id: Pictures.Id): Free[PRG#Cop, Array[Byte]] =
     for {
@@ -148,7 +128,7 @@ object Pictures {
   }
 
 
-  case class Picture(id: Pictures.Id, filename: Filename, extension: Extension, album: Albums.Id, preview: Boolean = false, title: Option[Title] = None, description: Option[String] = None, file: Option[String] = None, picture: Option[Array[Byte]] = None, thumbnail: Option[Array[Byte]] = None)
+  case class Picture(id: Pictures.Id, filename: Filename, extension: Extension, album: Albums.Id, preview: Boolean = false, title: Option[Title] = None, description: Option[String] = None)
 
   type Id = String
   type Title = String

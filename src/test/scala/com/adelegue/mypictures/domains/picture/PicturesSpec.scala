@@ -8,7 +8,7 @@ import com.adelegue.mypictures.domains.account.Accounts
 import com.adelegue.mypictures.domains.account.Accounts.GetAccountByUsername
 import com.adelegue.mypictures.domains.album.Albums
 import com.adelegue.mypictures.domains.album.Albums.{Album, GetAlbum}
-import com.adelegue.mypictures.domains.picture.Pictures.{Picture, PictureDeleted}
+import com.adelegue.mypictures.domains.picture.Pictures.{Picture, PictureCreated, PictureDeleted, PictureUpdated}
 import com.adelegue.mypictures.domains.picture.impl.{ImagesInterpreter, PicturesInterpreter}
 import com.adelegue.mypictures.{AkkaPersistanceWithTmpFolder, PersistenceConfig}
 import freek._
@@ -57,20 +57,21 @@ class PicturesSpec extends Specification {
 
       val res = await(Pictures.createPicture(picture, imageBytes).interpret(interpreter))
 
-      res.map(_.picture.copy(thumbnail=None, picture=None)) must beEqualTo(Success(picture))
+      res must beEqualTo(Success(PictureCreated(picture)))
 
-      val expectedImg = await(Pictures.readImage(picture.id).interpret(interpreter))
-      val expectedThumbnail = await(Pictures.readThumbnail(picture.id).interpret(interpreter))
-
-      val expectedPicture = picture.copy(picture = Some(expectedImg), thumbnail = Some(expectedThumbnail))
+      val img = await(Pictures.readImage(picture.id).interpret(interpreter))
+      val thumbnail = await(Pictures.readThumbnail(picture.id).interpret(interpreter))
 
       val createdPicture = res.fold(f => throw new RuntimeException, p => p.picture)
-      createdPicture.picture must beSome(expectedImg)
-      createdPicture.thumbnail must beSome(expectedThumbnail)
+      val expectedImg = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-resized.jpg"))
+      val expectedThumbnail = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-thumbnail.jpg"))
+
+      img must beEqualTo(expectedImg)
+      thumbnail must beEqualTo(expectedThumbnail)
 
       val read = await(Pictures.getPicture("12345").interpret(interpreter))
 
-      read.map(_.copy(picture=None, thumbnail=None)) must beSome(picture)
+      read must beSome(picture)
     }
 
 
@@ -107,18 +108,21 @@ class PicturesSpec extends Specification {
 
       val res = await(updated.interpret(interpreter))
 
-      res.map(_.picture.copy(thumbnail=None, picture=None)) must beEqualTo(Success(pictureUpdate))
+      res must beEqualTo(Success(PictureUpdated(pictureUpdate)))
 
-      val expectedImg = await(Pictures.readImage(picture.id).interpret(interpreter))
-      val expectedThumbnail = await(Pictures.readThumbnail(picture.id).interpret(interpreter))
+      val img = await(Pictures.readImage(picture.id).interpret(interpreter))
+      val thumbnail = await(Pictures.readThumbnail(picture.id).interpret(interpreter))
 
       val createdPicture = res.fold(f => throw new RuntimeException, p => p.picture)
-      createdPicture.picture must beSome(expectedImg)
-      createdPicture.thumbnail must beSome(expectedThumbnail)
+      val expectedImg = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-resized.jpg"))
+      val expectedThumbnail = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-thumbnail.jpg"))
+
+      img must beEqualTo(expectedImg)
+      thumbnail must beEqualTo(expectedThumbnail)
 
       val read = await(Pictures.getPicture("12345").interpret(interpreter))
 
-      read.map(_.copy(picture=None, thumbnail=None)) must beSome(pictureUpdate)
+      read must beSome(pictureUpdate)
     }
 
 
@@ -150,9 +154,9 @@ class PicturesSpec extends Specification {
 
       val res = await(Pictures.createPicture(picture, imageBytes).interpret(interpreter))
 
-      res.map(_.picture.copy(thumbnail=None, picture=None)) must beEqualTo(Success(picture))
+      res must beEqualTo(Success(PictureCreated(picture)))
       val read = await(Pictures.getPicture("12345").interpret(interpreter))
-      read.map(_.copy(picture=None, thumbnail=None)) must beSome(picture)
+      read must beSome(picture)
 
       val deleted = await(Pictures.deletePicture("12345").interpret(interpreter))
       deleted must beEqualTo(Success(PictureDeleted("12345")))

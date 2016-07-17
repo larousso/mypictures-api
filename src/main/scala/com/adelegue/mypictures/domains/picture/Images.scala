@@ -2,6 +2,8 @@ package com.adelegue.mypictures.domains.picture
 
 import cats.free.Free
 import freek._
+import org.json4s.CustomSerializer
+import org.json4s.JsonAST.JString
 /**
   * Created by adelegue on 30/05/2016.
   */
@@ -42,4 +44,18 @@ object Images {
   sealed trait Rotation
   case object Right extends Rotation
   case object Left extends Rotation
+
+  class RotationSerializer extends CustomSerializer[Rotation](format => (
+    {
+      case JString(s) if s == "right" =>
+        Right
+      case JString(s) if s == "left" =>
+        Left
+    },
+    {
+      case Right =>
+        JString("right")
+      case Left =>
+        JString("left")
+  }))
 }

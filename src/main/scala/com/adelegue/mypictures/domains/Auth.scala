@@ -1,15 +1,15 @@
 package com.adelegue.mypictures.domains
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.AuthorizationFailedRejection
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.{AuthorizationFailedRejection, Directive0, Route}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directive0, Route}
 import akka.stream.Materializer
 import cats._
 import com.adelegue.mypictures.domains.account.Accounts
 import com.adelegue.mypictures.domains.account.Accounts.Role.Guest
 import com.adelegue.mypictures.domains.account.Accounts.{DSL, Role, RoleSerializer}
+import com.adelegue.mypictures.validation.Validation
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.softwaremill.session.{JValueSessionSerializer, JwtSessionEncoder, SessionConfig, SessionManager}
@@ -44,11 +44,20 @@ class Auth(config: Config, accountInterpreter: Accounts.DSL ~> Future)(implicit 
   val fAuth = new FacebookAuth(config.getString("facebook.appId"), config.getString("facebook.appSecret"))
   val defaultRedirect = s"http://${config.getString("app.host")}:${config.getInt("app.port")}/api/session"
 
+  def isAuthenticated: Directive0 = {
+    optionalSession(oneOff, usingCookies).flatMap {
+      case Some(Session(Some(user), _)) =>
+        pass
+      case _ =>
+        reject(AuthorizationFailedRejection)
+    }
+  }
+
   def hashRole[Unit](role: Role): Directive0 = {
     optionalSession(oneOff, usingCookies).flatMap {
       case Some(Session(Some(user), _)) if user.role == role =>
         pass
-      case None =>
+      case _ =>
         reject(AuthorizationFailedRejection)
     }
   }
@@ -93,7 +102,7 @@ class Auth(config: Config, accountInterpreter: Accounts.DSL ~> Future)(implicit 
       get {
         optionalSession(oneOff, usingCookies) {
           case Some(session) =>
-            complete(session)
+            complete(session.user)
           case None =>
             complete(StatusCodes.NotFound)
         }
@@ -102,19 +111,23 @@ class Auth(config: Config, accountInterpreter: Accounts.DSL ~> Future)(implicit 
     path("login") {
       post {
         entity(as[LoginForm]) { login =>
-          println(s"User $login")
-          complete(login)
-          onSuccess(Accounts.getAccountByUsername(login.login).interpret(Interpreter(accountInterpreter))) {
-            case Some(a) if a.password == login.password =>
-              println(s"Found !")
-              val session = Session(user= Some(SessionUser(a.surname, a.role, Custom)))
-              setSession(oneOff, usingCookies, session) {
-                complete(session)
-              }
-            case _ =>
-              println("Unauthorized")
-              complete(StatusCodes.Unauthorized)
+          val mayBeLogin = for {
+            username <- login.username
+            password <- login.password
+          } yield {
+            onSuccess(Accounts.getAccountByUsername(username).interpret(Interpreter(accountInterpreter))) {
+              case Some(a) if password == a.password =>
+                val session = Session(user = Some(SessionUser(a.surname, a.role, Custom)))
+                setSession(oneOff, usingCookies, session) {
+                  complete(session)
+                }
+              case _ =>
+                complete(StatusCodes.Forbidden -> Validation.Error("Erreur de login ou de mot de passe"))
+            }
           }
+
+          mayBeLogin getOrElse complete(StatusCodes.Forbidden -> Validation.Error("Error de login ou de mot de passe"))
+
         }
       }
     }
