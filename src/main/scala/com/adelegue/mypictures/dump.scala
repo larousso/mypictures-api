@@ -53,7 +53,7 @@ object Dump {
             .mapConcat(identity _)
             .mapAsyncUnordered(4) {
               case (Some(file), picture) =>
-                println(s"p : $picture")
+                Logger.logger.info(s"p : $picture")
                 Pictures.createPicture(picture, file).interpret(pictureInterpreter)
               case _ =>
                 Future.failed(new RuntimeException("Fuck"))
@@ -78,7 +78,7 @@ class Dump()(implicit system: ActorSystem, materializer: Materializer) {
     val baseUrl = "http://vps244493.ovh.net/api"
 
     def findAlbums(username: String, cookies: Seq[HttpCookiePair]): Future[Seq[Albums.Album]] = {
-      println(s"cookies $cookies")
+      Logger.logger.info(s"cookies $cookies")
       val accountsUrl = s"$baseUrl/accounts/$username/albums"
       get[Seq[Albums.Album]](accountsUrl, cookies)
     }
@@ -133,7 +133,7 @@ class Dump()(implicit system: ActorSystem, materializer: Materializer) {
             .map { _.utf8String}
             .runFold("")(_ ++ _)
             .map { str =>
-              println(s"Auth : $str")
+              Logger.logger.info(s"Auth : $str")
               cookies
             }
         case HttpResponse(status, headers, entity, _) =>
@@ -142,7 +142,7 @@ class Dump()(implicit system: ActorSystem, materializer: Materializer) {
            .map { _.utf8String}
            .runFold("")(_ ++ _)
            .map { str =>
-             println(s"Auth fail : $status, $str")
+             Logger.logger.info(s"Auth fail : $status, $str")
              Seq.empty[HttpCookiePair]
            }
       }

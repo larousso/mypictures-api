@@ -132,7 +132,6 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
               pathPrefix("albums" / "[a-z0-9\\-]+".r) { albumId: Albums.Id =>
                 pathEnd {
                   get {
-                    println(s"Album id $albumId")
                     onSuccess(Albums.getAlbum(albumId).interpret(albumInterpreter)) {
                       case Some(a) => complete(a)
                       case None => complete(StatusCodes.NotFound)
@@ -235,7 +234,6 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
                                         fileUpload("file") {
                                           case (metadata, byteSource) =>
                                             val filename: Pictures.Filename = metadata.fileName
-                                            println(s"Meta $metadata")
                                             metadata.contentType.mediaType.fileExtensions
                                             val imgType: Pictures.Type = "image/jpeg"
                                             val picture = Pictures.Picture(pictureId, filename, imgType, albumId)

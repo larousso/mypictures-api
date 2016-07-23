@@ -18,17 +18,21 @@ resolvers ++= Seq(
 
 enablePlugins(JavaServerAppPackaging)
 
+val akkaVersion = "2.4.8"
+
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.4.6",
-  "com.typesafe.akka" %% "akka-stream" % "2.4.6",
-  "com.typesafe.akka" %% "akka-http-core" % "2.4.6",
-  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.6",
-  "com.typesafe.akka" %% "akka-persistence" % "2.4.6",
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-core" % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "ch.qos.logback" % "logback-classic" % "1.1.3",
+  "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
   "com.softwaremill.akka-http-session" %% "core" % "0.2.5",
   "com.softwaremill.akka-http-session" %% "jwt"  % "0.2.5",
   "ch.megard" %% "akka-http-cors" % "0.1.2",
-  "com.typesafe.akka" %% "akka-persistence-tck" % "2.4.6",
+  "com.typesafe.akka" %% "akka-persistence-tck" % akkaVersion,
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
   "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
   "com.sksamuel.scrimage" %% "scrimage-core" % "2.1.0",
@@ -43,7 +47,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-laws" % "0.6.0",
   "com.milessabin" % "si2712fix-library" % "1.2.0" cross CrossVersion.full,
   "com.chuusai" %% "shapeless" % "2.3.1",
-  "com.typesafe.akka" %% "akka-testkit" % "2.4.6" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "org.specs2" %% "specs2-core" % "3.8.3" % "test"
 )
