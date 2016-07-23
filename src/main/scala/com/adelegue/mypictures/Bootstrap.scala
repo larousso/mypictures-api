@@ -53,7 +53,7 @@ object Bootstrap extends App {
   val port = config.getInt("app.port")
   val host = config.getString("app.host")
 
-  val api = Api(config, AccountInterpreter(system), AlbumInterpreter(system), ImagesInterpreter("target/images"), PicturesInterpreter(system), CommentInterpreter(system))
+  val api = Api(config, AccountInterpreter(system), AlbumInterpreter(system), ImagesInterpreter(config.getString("app.images.path")), PicturesInterpreter(system), CommentInterpreter(system))
   val bindingFuture = Http().bindAndHandle(api.route, host, port)
 
   Logger.logger.info(s"Server online at http://{}:{}", host, port)
