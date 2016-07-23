@@ -2,6 +2,8 @@ import sbtprotobuf.{ProtobufPlugin=>PB}
 
 name := """mypictures-api"""
 
+organization := "com.adelegue"
+
 version := "1.0"
 
 maintainer := "Alexandre Delègue"
@@ -16,7 +18,7 @@ resolvers ++= Seq(
   Resolver.mavenLocal, Resolver.sonatypeRepo("releases"), Resolver.jcenterRepo
 )
 
-enablePlugins(JavaServerAppPackaging)
+enablePlugins(JavaServerAppPackaging, UniversalDeployPlugin)
 
 val akkaVersion = "2.4.8"
 
@@ -67,3 +69,6 @@ scalacOptions ++= Seq(
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
+
+publishTo := Some(Resolver.file("file",  new File("/Users/adelegue/idea/mvn-repo/releases")))
+
