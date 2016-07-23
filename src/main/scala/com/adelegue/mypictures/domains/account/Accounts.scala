@@ -3,10 +3,9 @@ package com.adelegue.mypictures.domains.account
 import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
 import com.adelegue.mypictures.validation.Validation.Result
 import cats.free.Free
-import com.adelegue.mypictures.domains.account.Accounts.Role.Admin
 import freek._
 import org.json4s.CustomSerializer
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonAST._
 
 /**
   * Created by adelegue on 24/05/2016.
@@ -89,6 +88,3 @@ object Accounts {
   case object ListAll extends AccountQuery with DSL[List[Account]]
   case class GetAccountByUsername(username: Username) extends AccountQuery with DSL[Option[Account]]
 }
-
-
-

@@ -64,18 +64,18 @@ public final class PictureModels {
     boolean getPreview();
 
     /**
-     * <code>required string extension = 5;</code>
+     * <code>required string type = 5;</code>
      */
-    boolean hasExtension();
+    boolean hasType();
     /**
-     * <code>required string extension = 5;</code>
+     * <code>required string type = 5;</code>
      */
-    java.lang.String getExtension();
+    java.lang.String getType();
     /**
-     * <code>required string extension = 5;</code>
+     * <code>required string type = 5;</code>
      */
     com.google.protobuf.ByteString
-        getExtensionBytes();
+        getTypeBytes();
 
     /**
      * <code>optional string description = 6;</code>
@@ -197,7 +197,7 @@ public final class PictureModels {
             case 42: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000010;
-              extension_ = bs;
+              type_ = bs;
               break;
             }
             case 50: {
@@ -399,19 +399,19 @@ public final class PictureModels {
       return preview_;
     }
 
-    public static final int EXTENSION_FIELD_NUMBER = 5;
-    private java.lang.Object extension_;
+    public static final int TYPE_FIELD_NUMBER = 5;
+    private java.lang.Object type_;
     /**
-     * <code>required string extension = 5;</code>
+     * <code>required string type = 5;</code>
      */
-    public boolean hasExtension() {
+    public boolean hasType() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
-     * <code>required string extension = 5;</code>
+     * <code>required string type = 5;</code>
      */
-    public java.lang.String getExtension() {
-      java.lang.Object ref = extension_;
+    public java.lang.String getType() {
+      java.lang.Object ref = type_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -419,22 +419,22 @@ public final class PictureModels {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          extension_ = s;
+          type_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>required string extension = 5;</code>
+     * <code>required string type = 5;</code>
      */
     public com.google.protobuf.ByteString
-        getExtensionBytes() {
-      java.lang.Object ref = extension_;
+        getTypeBytes() {
+      java.lang.Object ref = type_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        extension_ = b;
+        type_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -572,7 +572,7 @@ public final class PictureModels {
       title_ = "";
       filename_ = "";
       preview_ = false;
-      extension_ = "";
+      type_ = "";
       description_ = "";
       album_ = "";
       file_ = "";
@@ -595,7 +595,7 @@ public final class PictureModels {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasExtension()) {
+      if (!hasType()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -623,7 +623,7 @@ public final class PictureModels {
         output.writeBool(4, preview_);
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBytes(5, getExtensionBytes());
+        output.writeBytes(5, getTypeBytes());
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         output.writeBytes(6, getDescriptionBytes());
@@ -661,7 +661,7 @@ public final class PictureModels {
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(5, getExtensionBytes());
+          .computeBytesSize(5, getTypeBytes());
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
@@ -800,7 +800,7 @@ public final class PictureModels {
         bitField0_ = (bitField0_ & ~0x00000004);
         preview_ = false;
         bitField0_ = (bitField0_ & ~0x00000008);
-        extension_ = "";
+        type_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
         description_ = "";
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -855,7 +855,7 @@ public final class PictureModels {
         if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
           to_bitField0_ |= 0x00000010;
         }
-        result.extension_ = extension_;
+        result.type_ = type_;
         if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
           to_bitField0_ |= 0x00000020;
         }
@@ -902,9 +902,9 @@ public final class PictureModels {
         if (other.hasPreview()) {
           setPreview(other.getPreview());
         }
-        if (other.hasExtension()) {
+        if (other.hasType()) {
           bitField0_ |= 0x00000010;
-          extension_ = other.extension_;
+          type_ = other.type_;
           onChanged();
         }
         if (other.hasDescription()) {
@@ -939,7 +939,7 @@ public final class PictureModels {
           
           return false;
         }
-        if (!hasExtension()) {
+        if (!hasType()) {
           
           return false;
         }
@@ -1229,24 +1229,24 @@ public final class PictureModels {
         return this;
       }
 
-      private java.lang.Object extension_ = "";
+      private java.lang.Object type_ = "";
       /**
-       * <code>required string extension = 5;</code>
+       * <code>required string type = 5;</code>
        */
-      public boolean hasExtension() {
+      public boolean hasType() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
-       * <code>required string extension = 5;</code>
+       * <code>required string type = 5;</code>
        */
-      public java.lang.String getExtension() {
-        java.lang.Object ref = extension_;
+      public java.lang.String getType() {
+        java.lang.Object ref = type_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            extension_ = s;
+            type_ = s;
           }
           return s;
         } else {
@@ -1254,53 +1254,53 @@ public final class PictureModels {
         }
       }
       /**
-       * <code>required string extension = 5;</code>
+       * <code>required string type = 5;</code>
        */
       public com.google.protobuf.ByteString
-          getExtensionBytes() {
-        java.lang.Object ref = extension_;
+          getTypeBytes() {
+        java.lang.Object ref = type_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          extension_ = b;
+          type_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>required string extension = 5;</code>
+       * <code>required string type = 5;</code>
        */
-      public Builder setExtension(
+      public Builder setType(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000010;
-        extension_ = value;
+        type_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required string extension = 5;</code>
+       * <code>required string type = 5;</code>
        */
-      public Builder clearExtension() {
+      public Builder clearType() {
         bitField0_ = (bitField0_ & ~0x00000010);
-        extension_ = getDefaultInstance().getExtension();
+        type_ = getDefaultInstance().getType();
         onChanged();
         return this;
       }
       /**
-       * <code>required string extension = 5;</code>
+       * <code>required string type = 5;</code>
        */
-      public Builder setExtensionBytes(
+      public Builder setTypeBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000010;
-        extension_ = value;
+        type_ = value;
         onChanged();
         return this;
       }
@@ -3105,15 +3105,15 @@ public final class PictureModels {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\023PictureModels.proto\"\214\001\n\007Picture\022\n\n\002id\030" +
+      "\n\023PictureModels.proto\"\207\001\n\007Picture\022\n\n\002id\030" +
       "\001 \002(\t\022\r\n\005title\030\002 \001(\t\022\020\n\010filename\030\003 \002(\t\022\017" +
-      "\n\007preview\030\004 \002(\010\022\021\n\textension\030\005 \002(\t\022\023\n\013de" +
-      "scription\030\006 \001(\t\022\r\n\005album\030\007 \002(\t\022\014\n\004file\030\010" +
-      " \001(\t\"+\n\016PictureCreated\022\031\n\007picture\030\001 \002(\0132" +
-      "\010.Picture\"+\n\016PictureUpdated\022\031\n\007picture\030\001" +
-      " \002(\0132\010.Picture\"\034\n\016PictureDeleted\022\n\n\002id\030\001" +
-      " \002(\tB+\n\'com.adelegue.mypictures.domains." +
-      "pictureH\001"
+      "\n\007preview\030\004 \002(\010\022\014\n\004type\030\005 \002(\t\022\023\n\013descrip" +
+      "tion\030\006 \001(\t\022\r\n\005album\030\007 \002(\t\022\014\n\004file\030\010 \001(\t\"" +
+      "+\n\016PictureCreated\022\031\n\007picture\030\001 \002(\0132\010.Pic" +
+      "ture\"+\n\016PictureUpdated\022\031\n\007picture\030\001 \002(\0132" +
+      "\010.Picture\"\034\n\016PictureDeleted\022\n\n\002id\030\001 \002(\tB" +
+      "+\n\'com.adelegue.mypictures.domains.pictu" +
+      "reH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -3132,7 +3132,7 @@ public final class PictureModels {
     internal_static_Picture_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_Picture_descriptor,
-        new java.lang.String[] { "Id", "Title", "Filename", "Preview", "Extension", "Description", "Album", "File", });
+        new java.lang.String[] { "Id", "Title", "Filename", "Preview", "Type", "Description", "Album", "File", });
     internal_static_PictureCreated_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_PictureCreated_fieldAccessorTable = new

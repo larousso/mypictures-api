@@ -2,13 +2,11 @@ package com.adelegue.mypictures
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{MalformedRequestContentRejection, RejectionHandler, ValidationRejection}
 import akka.stream.ActorMaterializer
 import com.adelegue.mypictures.domains.Api
-import com.adelegue.mypictures.domains.account.Accounts.RoleSerializer
 import com.adelegue.mypictures.domains.account.impl.AccountInterpreter
 import com.adelegue.mypictures.domains.album.impl.AlbumInterpreter
 import com.adelegue.mypictures.domains.comment.impl.CommentInterpreter

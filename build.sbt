@@ -4,11 +4,20 @@ name := """mypictures-api"""
 
 version := "1.0"
 
+maintainer := "Alexandre Delègue"
+
+packageSummary := "Api de gestion de photos"
+
+packageDescription := "Api de gestion de photos"
+
 scalaVersion := "2.11.8"
 
 resolvers ++= Seq(
   Resolver.mavenLocal, Resolver.sonatypeRepo("releases"), Resolver.jcenterRepo
 )
+
+enablePlugins(JavaServerAppPackaging)
+
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.6",
@@ -38,6 +47,8 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "org.specs2" %% "specs2-core" % "3.8.3" % "test"
 )
+
+mainClass in (Compile, run) := Some("com.adelegue.mypictures.Bootstrap")
 
 PB.protobufSettings
 

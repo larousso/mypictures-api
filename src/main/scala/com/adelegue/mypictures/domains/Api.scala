@@ -1,39 +1,32 @@
 package com.adelegue.mypictures.domains
 
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import cats._
 import ch.megard.akka.http.cors.CorsSettings
-import com.adelegue.mypictures.validation.Validation._
 import com.adelegue.mypictures.domains.account.Accounts
-import com.adelegue.mypictures.domains.account.Accounts.Role.{Admin, Guest}
+import com.adelegue.mypictures.domains.account.Accounts.Role.Admin
 import com.adelegue.mypictures.domains.account.Accounts.{Role, _}
 import com.adelegue.mypictures.domains.album.Albums
 import com.adelegue.mypictures.domains.comment.Comments
 import com.adelegue.mypictures.domains.picture.Images.RotationSerializer
-import com.adelegue.mypictures.domains.picture.Pictures.PictureCreated
 import com.adelegue.mypictures.domains.picture.{Images, Pictures}
 import com.typesafe.config.Config
-import org.json4s
 import org.json4s.JsonAST.JString
 import org.json4s.{CustomSerializer, DefaultFormats, jackson}
 
 import scala.collection.immutable
 import scala.concurrent.Future
-import scala.util.parsing.json.JSONObject
 import scalaz.{Failure, Success}
-
+import com.adelegue.mypictures.Dump
 /**
   * Created by adelegue on 30/06/2016.
   */
@@ -88,9 +81,10 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
   val albumInterpreter = alb :&: accountInterpreter
   val pictureInterpreter = pict :&: img :&: albumInterpreter
   val commentInterpreter = comm :&: pictureInterpreter
-
+  //{id:'heloise', username: 'heloise', name: 'Bosseau', surname:'Héloïse', password: '1236Avery', role: Roles.ADMIN},
   val init = for {
     _ <- Accounts.createOrUpdateAccount(Accounts.Account("alex", "alex", "alex", "alex", Admin))
+    _ <- Accounts.createOrUpdateAccount(Accounts.Account("heloise", "1236Avery", "Bosseau", "Héloïse", Admin))
   } yield ()
 
   init.interpret(Interpreter(accountInterpreter))
@@ -99,6 +93,17 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
   val corsSettings = CorsSettings.defaultSettings.copy(allowedMethods = immutable.Seq(GET, POST, HEAD, OPTIONS, PUT, DELETE))
   def route(): Route =
     cors(corsSettings) {
+      path("resynchro") {
+
+          onComplete(Dump.run(acc, alb, pict, img)) {
+            case scala.util.Success(res) => complete(StatusCodes.OK -> res)
+            case scala.util.Failure(e) => {
+              e.printStackTrace()
+              complete(StatusCodes.BadRequest -> e)
+            }
+          }
+
+      } ~
       auth.facebookApi ~
         auth.isAuthenticated {
           pathPrefix("static") {
@@ -121,6 +126,32 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
         pathPrefix("api") {
           auth.loginApi ~
             auth.isAuthenticated {
+              pathPrefix("albums" / "[a-z0-9\\-]+".r) { albumId: Albums.Id =>
+                pathEnd {
+                  get {
+                    println(s"Album id $albumId")
+                    onSuccess(Albums.getAlbum(albumId).interpret(albumInterpreter)) {
+                      case Some(a) => complete(a)
+                      case None => complete(StatusCodes.NotFound)
+                    }
+                  }
+                } ~
+                path("pictures") {
+                  get {
+                    onSuccess(Pictures.getPictureByAlbum(albumId).interpret(pictureInterpreter)) { pictures =>
+                      complete(StatusCodes.OK -> pictures)
+                    }
+                  }
+                }
+              } ~
+              path("pictures" / "[a-z0-9\\-]+".r) { pictureId: Pictures.Id =>
+                get {
+                  onSuccess(Pictures.getPicture(pictureId).interpret(pictureInterpreter)) {
+                    case Some(p) => complete(p)
+                    case None => complete(StatusCodes.NotFound)
+                  }
+                }
+              } ~
               pathPrefix("accounts" / "\\w+".r) { username: Accounts.Username =>
                 pathEnd {
                   get {
@@ -159,9 +190,13 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
                           } ~
                             delete {
                               auth.hashRole(Admin) {
-                                onSuccess(Albums.deleteAlbum(albumId).interpret(albumInterpreter)) {
+                                val res = for {
+                                  _ <- Pictures.deletePicturesByAlbum(albumId)
+                                  delete <- Albums.deleteAlbum(albumId).expand[Pictures.PRG]
+                                } yield delete
+
+                                onSuccess(res.interpret(pictureInterpreter)) {
                                   case Success(a) =>
-                                    println(s"deleted $albumId")
                                     complete(StatusCodes.OK -> a)
                                   case Failure(e) =>
                                     complete(StatusCodes.BadRequest -> e)
@@ -198,8 +233,8 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
                                           case (metadata, byteSource) =>
                                             val filename: Pictures.Filename = metadata.fileName
                                             metadata.contentType.mediaType.fileExtensions
-                                            val extension: Pictures.Extension = "jpg"
-                                            val picture = Pictures.Picture(pictureId, filename, extension, albumId)
+                                            val imgType: Pictures.Type = "image/jpeg"
+                                            val picture = Pictures.Picture(pictureId, filename, imgType, albumId)
                                             onSuccess(byteSource
                                               .runFold(ByteString.empty)(_ ++ _)
                                               .map(_.toArray[Byte])
@@ -208,7 +243,7 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
                                                 Pictures.createPicture(picture, fileContent).interpret(pictureInterpreter)
                                               }) {
                                               case Success(p) => complete(StatusCodes.Created -> p.picture)
-                                              case Failure(e) => complete(StatusCodes.BadRequest, e)
+                                              case Failure(e) => complete(StatusCodes.BadRequest -> e)
                                             }
                                         }
                                       }

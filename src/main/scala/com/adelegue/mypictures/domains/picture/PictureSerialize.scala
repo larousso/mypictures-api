@@ -61,7 +61,7 @@ class PictureSerialize extends SerializerWithStringManifest {
       .setId(a.id)
       .setFilename(a.filename)
       .setPreview(a.preview)
-      .setExtension(a.extension)
+      .setType(a.`type`)
       .setAlbum(a.album)
     a.title.foreach(builder.setTitle)
     a.description.foreach(builder.setDescription)
@@ -74,6 +74,6 @@ class PictureSerialize extends SerializerWithStringManifest {
 
   private def pictureDeleted(a: PictureModels.PictureDeleted) = PictureDeleted(a.getId)
 
-  private def picture(p: PictureModels.Picture) = Picture(p.getId, p.getFilename, p.getExtension, p.getAlbum, p.getPreview, Option(p.getTitle), Option(p.getDescription))
+  private def picture(p: PictureModels.Picture) = Picture(p.getId, p.getFilename, p.getType, p.getAlbum, p.getPreview, Option(p.getTitle), Option(p.getDescription))
 
 }

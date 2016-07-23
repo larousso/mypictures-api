@@ -49,6 +49,14 @@ object Pictures {
     } yield p
   }
 
+  def deletePicturesByAlbum(albumId: Albums.Id): Free[PRG#Cop, List[Result[PictureDeleted]]] = {
+      import cats.implicits._
+      for {
+        pictures <- getPictureByAlbum(albumId)
+        deletes <- pictures.traverseU { p => deletePicture(p.id) }
+      } yield deletes
+  }
+
   def deletePicture(id: Pictures.Id): Free[PRG#Cop, Result[PictureDeleted]] =
     for {
       _ <- Images.deleteImage(id).expand[PRG]
@@ -128,12 +136,12 @@ object Pictures {
   }
 
 
-  case class Picture(id: Pictures.Id, filename: Filename, extension: Extension, album: Albums.Id, preview: Boolean = false, title: Option[Title] = None, description: Option[String] = None)
+  case class Picture(id: Pictures.Id, filename: Filename, `type`: Type, album: Albums.Id, preview: Boolean = false, title: Option[Title] = None, description: Option[String] = None)
 
   type Id = String
   type Title = String
   type Filename = String
-  type Extension = String
+  type Type = String
 
 
   sealed trait DSL[A]
