@@ -117,7 +117,7 @@ class Auth(config: Config, accountInterpreter: Accounts.DSL ~> Future)(implicit 
           } yield {
             onSuccess(Accounts.getAccountByUsername(username).interpret(Interpreter(accountInterpreter))) {
               case Some(a) if password == a.password =>
-                val session = Session(user = Some(SessionUser(a.surname, a.role, Custom)))
+                val session = Session(user = Some(SessionUser(a.username, a.role, Custom)))
                 setSession(oneOff, usingCookies, session) {
                   complete(session)
                 }

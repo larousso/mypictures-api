@@ -1,6 +1,7 @@
 package com.adelegue.mypictures.domains
 
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{Date, UUID}
 
 import akka.actor.ActorSystem
@@ -74,6 +75,8 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
   import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
   import freek._
   import system.dispatcher
+  import collection.JavaConversions._
+
   implicit val serialization = jackson.Serialization
   implicit val formats = new DefaultFormats { override def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") } + new RoleSerializer + new RotationSerializer
 
@@ -81,21 +84,21 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
   val albumInterpreter = alb :&: accountInterpreter
   val pictureInterpreter = pict :&: img :&: albumInterpreter
   val commentInterpreter = comm :&: pictureInterpreter
-  //{id:'heloise', username: 'heloise', name: 'Bosseau', surname:'Héloïse', password: '1236Avery', role: Roles.ADMIN},
-  val init = for {
-    _ <- Accounts.createOrUpdateAccount(Accounts.Account("alex", "alex", "alex", "alex", Admin))
-    _ <- Accounts.createOrUpdateAccount(Accounts.Account("heloise", "1236Avery", "Bosseau", "Héloïse", Admin))
-  } yield ()
 
-  init.interpret(Interpreter(accountInterpreter))
+  private val users = config.getConfigList("users").toList
+  users.foreach( userConfig => {
+    (for {
+      _ <- Accounts.createOrUpdateAccount(Accounts.Account(userConfig.getString("username"), userConfig.getString("password"), userConfig.getString("name"), userConfig.getString("surname"), Role.fromString(userConfig.getString("role"))))
+    } yield ()).interpret(Interpreter(accountInterpreter))
+  })
+
   val auth = Auth(config, acc)
 
   val corsSettings = CorsSettings.defaultSettings.copy(allowedMethods = immutable.Seq(GET, POST, HEAD, OPTIONS, PUT, DELETE))
   def route(): Route =
     cors(corsSettings) {
       path("resynchro") {
-
-          onComplete(Dump.run(acc, alb, pict, img)) {
+          onComplete(Dump.run(config, acc, alb, pict, img)) {
             case scala.util.Success(res) => complete(StatusCodes.OK -> res)
             case scala.util.Failure(e) => {
               e.printStackTrace()
@@ -232,6 +235,7 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
                                         fileUpload("file") {
                                           case (metadata, byteSource) =>
                                             val filename: Pictures.Filename = metadata.fileName
+                                            println(s"Meta $metadata")
                                             metadata.contentType.mediaType.fileExtensions
                                             val imgType: Pictures.Type = "image/jpeg"
                                             val picture = Pictures.Picture(pictureId, filename, imgType, albumId)
@@ -239,7 +243,6 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
                                               .runFold(ByteString.empty)(_ ++ _)
                                               .map(_.toArray[Byte])
                                               .flatMap { fileContent =>
-                                                println(s"$filename bytes $fileContent")
                                                 Pictures.createPicture(picture, fileContent).interpret(pictureInterpreter)
                                               }) {
                                               case Success(p) => complete(StatusCodes.Created -> p.picture)
