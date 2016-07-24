@@ -37,23 +37,29 @@ object Dump {
 
     val username = config.getString("admin.username")
     val password = config.getString("admin.password")
-
+    Logger.logger.info("Starting copy with user {}", username)
     Source
       .fromFuture(d.login(username, password))
       .flatMapMerge(1,  cookies => {
+        Logger.logger.info("Getting album for heloise with auth {}", cookies)
         Source.fromFuture(d.findAlbums("heloise", cookies))
             .mapConcat(identity _)
-            .mapAsyncUnordered(4)(alb => Albums.createAlbum(alb).interpret(albumInterpreter))
+            .mapAsyncUnordered(4){alb =>
+              Logger.logger.info("Saving album {}", alb)
+              Albums.createAlbum(alb).interpret(albumInterpreter)
+            }
             .mapAsyncUnordered(4) {
               case scalaz.Success(created) =>
+                Logger.logger.info("Getting pictures for album {}", created.album.id)
                 d.findPictures("heloise", created.album.id, cookies)
-              case _ =>
+              case scalaz.Failure(f) =>
+                Logger.logger.info("Error saving album {}", f)
                 Future.failed(new RuntimeException("Error saving album"))
             }
             .mapConcat(identity _)
             .mapAsyncUnordered(4) {
               case (Some(file), picture) =>
-                Logger.logger.info(s"p : $picture")
+                Logger.logger.info(s"Saving picture {}", picture)
                 Pictures.createPicture(picture, file).interpret(pictureInterpreter)
               case _ =>
                 Future.failed(new RuntimeException("Fuck"))

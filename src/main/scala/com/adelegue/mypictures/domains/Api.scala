@@ -27,7 +27,7 @@ import org.json4s.{CustomSerializer, DefaultFormats, jackson}
 import scala.collection.immutable
 import scala.concurrent.Future
 import scalaz.{Failure, Success}
-import com.adelegue.mypictures.Dump
+import com.adelegue.mypictures.{Dump, Logger}
 /**
   * Created by adelegue on 30/06/2016.
   */
@@ -101,27 +101,26 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
           onComplete(Dump.run(config, acc, alb, pict, img)) {
             case scala.util.Success(res) => complete(StatusCodes.OK -> res)
             case scala.util.Failure(e) => {
-              e.printStackTrace()
+              Logger.logger.error("Error during resynchro", e)
               complete(StatusCodes.BadRequest -> e)
             }
           }
-
       } ~
       auth.facebookApi ~
-        auth.isAuthenticated {
-          pathPrefix("static") {
+        pathPrefix("static") {
+          auth.isAuthenticated {
             pathPrefix("images") {
               path("[a-z0-9\\-]+".r) { pictureId =>
                 onSuccess(Pictures.readImage(pictureId).interpret(pictureInterpreter)) { byteArray =>
                   complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
                 }
               }
-            } ~
-            pathPrefix("thumbnails") {
-              path("[a-z0-9\\-]+".r) { pictureId =>
-                onSuccess(Pictures.readThumbnail(pictureId).interpret(pictureInterpreter)) { byteArray =>
-                  complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
-                }
+            }
+          }~
+          pathPrefix("thumbnails") {
+            path("[a-z0-9\\-]+".r) { pictureId =>
+              onSuccess(Pictures.readThumbnail(pictureId).interpret(pictureInterpreter)) { byteArray =>
+                complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
               }
             }
           }
