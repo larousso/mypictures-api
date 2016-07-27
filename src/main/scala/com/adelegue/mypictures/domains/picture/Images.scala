@@ -12,7 +12,9 @@ object Images {
 
   type PRG = DSL :|: FXNil
 
-  def readImage(id: Id): Free[PRG#Cop, Image] = ReadImage(id).freek[PRG]
+
+  def readImage(id: Id): Free[PRG#Cop, Option[Image]] =
+    for { img <- ReadImage(id).freek[PRG] } yield img
 
   def createImage(id: Id, content: Array[Byte]): Free[PRG#Cop, Image] = CreateImage(id, content).freek[PRG]
 
@@ -20,7 +22,8 @@ object Images {
 
   def deleteImage(id: Id): Free[PRG#Cop, Unit] = DeleteImage(id).freek[PRG]
 
-  def readThumbnail(id: Id): Free[PRG#Cop, Thumbnail] = ReadThumbnail(id).freek[PRG]
+  def readThumbnail(id: Id): Free[PRG#Cop, Option[Thumbnail]] =
+    for { thumb <- ReadThumbnail(id).freek[PRG] } yield thumb
 
   def createThumbnail(id: Id, content: Array[Byte]): Free[PRG#Cop, Thumbnail] = CreateThumbnail(id, content).freek[PRG]
 
@@ -32,8 +35,8 @@ object Images {
   type Id = String
   case class Image(id: Id, content: Array[Byte])
   case class Thumbnail(id: Id, content: Array[Byte])
-  case class ReadImage(id: Id) extends DSL[Image]
-  case class ReadThumbnail(id: Id) extends DSL[Thumbnail]
+  case class ReadImage(id: Id) extends DSL[Option[Image]]
+  case class ReadThumbnail(id: Id) extends DSL[Option[Thumbnail]]
   case class DeleteImage(id: Id) extends DSL[Unit]
   case class DeleteThumbnail(id: Id) extends DSL[Unit]
   case class CreateImage(id: Id, content: Array[Byte]) extends DSL[Image]

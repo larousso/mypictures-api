@@ -1,7 +1,7 @@
 package com.adelegue.mypictures.domains.picture.impl
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 
 import cats.~>
 import com.adelegue.mypictures.domains.picture.Images
@@ -37,7 +37,12 @@ class ImagesInterpreter(basePath: String) extends (Images.DSL ~> Future) {
       delete(path(id)).asInstanceOf[Future[A]]
     case ReadThumbnail(id) =>
       Future {
-        Thumbnail(id, Files.readAllBytes(thumbnailPath(id).toPath))
+        val thumbPath: File = thumbnailPath(id)
+        if(thumbPath.exists()) {
+          Some(Thumbnail(id, Files.readAllBytes(thumbPath.toPath)))
+        } else {
+          None
+        }
       }.asInstanceOf[Future[A]]
     case CreateThumbnail(id, content) =>
       createImage(id, calcThumbnailScale, thumbnailPath(id), content)
@@ -52,7 +57,11 @@ class ImagesInterpreter(basePath: String) extends (Images.DSL ~> Future) {
   }
 
   def readImage(id: Images.Id, path: File) = Future {
-    Image(id, Files.readAllBytes(path.toPath))
+    if (path.exists()) {
+      Some(Image(id, Files.readAllBytes(path.toPath)))
+    } else {
+      None
+    }
   }
 
   def createImage(id: Images.Id, scale: scrimage.Image => Float, path: File, content: Array[Byte]): Future[(Id, Array[Byte])] =

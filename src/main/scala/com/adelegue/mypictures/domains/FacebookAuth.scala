@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
+import com.adelegue.mypictures.Logger
 import org.json4s.JsonAST.JObject
 import org.json4s.{DefaultFormats, jackson}
 
@@ -17,7 +18,7 @@ import scala.util.Try
 /**
   * Created by adelegue on 04/07/2016.
   */
-class FacebookAuth(appId: String, appSecret: String)(implicit val system: ActorSystem) {
+class FacebookAuth(redirectUrl: String, appId: String, appSecret: String)(implicit val system: ActorSystem) {
 
   import system.dispatcher
   import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
@@ -27,7 +28,9 @@ class FacebookAuth(appId: String, appSecret: String)(implicit val system: ActorS
   implicit val materializer = ActorMaterializer()
   private val httpClient: Flow[(HttpRequest, NotUsed), (Try[HttpResponse], NotUsed), HostConnectionPool] = Http().cachedHostConnectionPoolHttps[NotUsed](host = "graph.facebook.com")
 
-  val redirectUri = "http://localhost:9000/auth/facebook/callback"
+  Logger.logger.info("Facebook auth redierct : {}, appId : {}", redirectUrl, appId)
+
+  val redirectUri = s"http://$redirectUrl/auth/facebook/callback"
   val auth = s"https://www.facebook.com/dialog/oauth?client_id=$appId&redirect_uri=$redirectUri"
 
   def me(token: String) = {

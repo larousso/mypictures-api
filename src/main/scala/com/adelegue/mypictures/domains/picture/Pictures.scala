@@ -87,15 +87,15 @@ object Pictures {
     } yield pictures
   }
 
-  def readImage(id: Pictures.Id): Free[PRG#Cop, Array[Byte]] =
+  def readImage(id: Pictures.Id): Free[PRG#Cop, Option[Array[Byte]]] =
     for {
       img <- Images.readImage(id).expand[PRG]
-    } yield img.content
+    } yield img.map(_.content)
 
-  def readThumbnail(id: Pictures.Id): Free[PRG#Cop, Array[Byte]] =
+  def readThumbnail(id: Pictures.Id): Free[PRG#Cop, Option[Array[Byte]]] =
     for {
       img <- Images.readThumbnail(id).expand[PRG]
-    } yield img.content
+    } yield img.map(_.content)
 
   def validatePictureCreation(picture: Picture): Free[PRG#Cop, Result[Picture]] = {
     import scalaz.Scalaz._

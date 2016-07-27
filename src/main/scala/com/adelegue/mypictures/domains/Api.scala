@@ -6,7 +6,7 @@ import java.util.{Date, UUID}
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{HttpEntity, _}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
@@ -111,16 +111,22 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
           auth.isAuthenticated {
             pathPrefix("images") {
               path("[a-z0-9\\-]+".r) { pictureId =>
-                onSuccess(Pictures.readImage(pictureId).interpret(pictureInterpreter)) { byteArray =>
-                  complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
+                onSuccess(Pictures.readImage(pictureId).interpret(pictureInterpreter)) {
+                  case Some(byteArray) =>
+                    complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
+                  case None =>
+                    complete(HttpResponse(StatusCodes.NotFound))
                 }
               }
             }
-          }~
+          } ~
           pathPrefix("thumbnails") {
             path("[a-z0-9\\-]+".r) { pictureId =>
-              onSuccess(Pictures.readThumbnail(pictureId).interpret(pictureInterpreter)) { byteArray =>
-                complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
+              onSuccess(Pictures.readThumbnail(pictureId).interpret(pictureInterpreter)) {
+                case Some(byteArray) =>
+                  complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
+                case None =>
+                  complete(HttpResponse(StatusCodes.NotFound))
               }
             }
           }

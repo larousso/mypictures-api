@@ -36,12 +36,12 @@ class Auth(config: Config, accountInterpreter: Accounts.DSL ~> Future)(implicit 
   implicit val serialization = jackson.Serialization
   implicit val formats = DefaultFormats + new SessionTypeSerializer + new RoleSerializer
 
-  val sessionConfig = SessionConfig.default("some_very_long_secret_and_random_string_some_very_long_secret_and_random_string")
+  val sessionConfig = SessionConfig.default(config.getString("app.sessionSecret"))
   implicit val serializer = JValueSessionSerializer.caseClass[Session]
   implicit val encoder = new JwtSessionEncoder[Session]
   implicit val manager = new SessionManager(sessionConfig)
 
-  val fAuth = new FacebookAuth(config.getString("facebook.appId"), config.getString("facebook.appSecret"))
+  val fAuth = new FacebookAuth(config.getString("facebook.redirectUrl"), config.getString("facebook.appId"), config.getString("facebook.appSecret"))
   val defaultRedirect = s"http://${config.getString("app.host")}:${config.getInt("app.port")}/api/session"
 
   def isAuthenticated: Directive0 = {
