@@ -19,69 +19,70 @@ import scalaz.{Failure}
 object Albums {
 
   type PRG = Albums.DSL :|: Accounts.PRG
-
-  def createAlbum(album: Album): Free[PRG#Cop, Result[AlbumCreated]] =
+  val PRG = Program[PRG]
+  
+  def createAlbum(album: Album): Free[PRG.Cop, Result[AlbumCreated]] =
     for {
       validatedAlbum <- Validation.validateAlbumCreation(album)
       command <- validatedAlbum.fold(
-        e => Free.pure[PRG#Cop, Result[AlbumCreated]](Failure(e)),
+        e => Free.pure[PRG.Cop, Result[AlbumCreated]](Failure(e)),
         s => CreateAlbum(album).freek[PRG]
       )
     } yield command
 
-  def updateAlbum(album: Album): Free[PRG#Cop, Result[AlbumUpdated]] =
+  def updateAlbum(album: Album): Free[PRG.Cop, Result[AlbumUpdated]] =
     for {
       validatedAlbum <- Validation.validateAlbumUpdate(album)
       command <- validatedAlbum.fold(
-        e => Free.pure[PRG#Cop, Result[AlbumUpdated]](Failure(e)),
+        e => Free.pure[PRG.Cop, Result[AlbumUpdated]](Failure(e)),
         s => UpdateAlbum(album).freek[PRG]
       )
     } yield command
 
-  def deleteAlbum(id: Id): Free[PRG#Cop, Result[AlbumDeleted]] =
+  def deleteAlbum(id: Id): Free[PRG.Cop, Result[AlbumDeleted]] =
     for {
       delete <- DeleteAlbum(id).freek[PRG]
     } yield delete
 
-  def getAlbum(id: Id): Free[PRG#Cop, Option[Album]] =
+  def getAlbum(id: Id): Free[PRG.Cop, Option[Album]] =
     for { get <- GetAlbum(id).freek[PRG] } yield get
 
-  def getAlbumByUsername(username: Username): Free[PRG#Cop, List[Album]] =
+  def getAlbumByUsername(username: Username): Free[PRG.Cop, List[Album]] =
     for { get <- GetAlbumByUsername(username).freek[PRG] } yield get
 
-  def listAll: Free[PRG#Cop, List[Album]] = for { list <- ListAlbums.freek[PRG] } yield list
+  def listAll: Free[PRG.Cop, List[Album]] = for { list <- ListAlbums.freek[PRG] } yield list
 
   object Validation {
     import com.adelegue.mypictures.validation.Validation._
 
     import scalaz.Scalaz._
 
-    def validateAlbumCreation(album: Album): Free[PRG#Cop, Result[Album]] =
+    def validateAlbumCreation(album: Album): Free[PRG.Cop, Result[Album]] =
       for {
         username <- validateUsername(album)
         alreadyExists <- validateNotExists(album)
       } yield (username |@| alreadyExists) { (_, _) => album }
 
 
-    def validateAlbumUpdate(album: Album): Free[PRG#Cop, Result[Album]] =
+    def validateAlbumUpdate(album: Album): Free[PRG.Cop, Result[Album]] =
       for {
         username <- validateUsername(album)
         alreadyExists <- validateExists(album)
       } yield (username |@| alreadyExists) { (_, _) => album }
 
-    def validateUsername(album: Album): Free[PRG#Cop, Result[Album]] =
+    def validateUsername(album: Album): Free[PRG.Cop, Result[Album]] =
       Accounts.getAccountByUsername(album.username).expand[PRG].map {
         case Some(a) => album.successNel
         case None => Error(s"L'utilisateur ${album.username} n'existe pas").failureNel
       }
 
-    def validateNotExists(album: Album): Free[PRG#Cop, Result[Album]] =
+    def validateNotExists(album: Album): Free[PRG.Cop, Result[Album]] =
       albumExists(album).map { exists => if (exists) Error("L'album existe déjà").failureNel else album.successNel }
 
-    def validateExists(album: Album): Free[PRG#Cop, Result[Album]] =
+    def validateExists(album: Album): Free[PRG.Cop, Result[Album]] =
       albumExists(album).map { exists => if (!exists) Error("L'album n'existe pas").failureNel else album.successNel }
 
-    def albumExists(album: Album): Free[PRG#Cop, Boolean] =
+    def albumExists(album: Album): Free[PRG.Cop, Boolean] =
       for {
         mayBe <- Albums.getAlbum(album.id)
       } yield mayBe.isDefined

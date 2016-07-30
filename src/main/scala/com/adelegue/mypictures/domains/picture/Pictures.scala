@@ -15,12 +15,13 @@ import scalaz.Failure
 object Pictures {
 
   type PRG = Pictures.DSL :|: Images.DSL :|: Albums.PRG
-
-  def createPicture(picture: Picture, content: Array[Byte]): Free[PRG#Cop, Result[PictureCreated]] =
+  val PRG = Program[PRG]
+  
+  def createPicture(picture: Picture, content: Array[Byte]): Free[PRG.Cop, Result[PictureCreated]] =
     for {
       ok <- validatePictureCreation(picture)
       created <- ok.fold(
-        e => Free.pure[PRG#Cop, Result[PictureCreated]](Failure(e)),
+        e => Free.pure[PRG.Cop, Result[PictureCreated]](Failure(e)),
         p => for {
           image <- Images.createImage(picture.id, content).expand[PRG]
           thumbnail <- Images.createThumbnail(picture.id, content).expand[PRG]
@@ -30,12 +31,12 @@ object Pictures {
     } yield created
 
 
-  def updatePicture(picture: Picture): Free[PRG#Cop, Result[PictureUpdated]] =
+  def updatePicture(picture: Picture): Free[PRG.Cop, Result[PictureUpdated]] =
     for {
       updated <- UpdatePicture(picture).freek[PRG]
     } yield updated
 
-  def rotatePicture(id: Id, rotation: Rotation): Free[PRG#Cop, Option[Picture]] = {
+  def rotatePicture(id: Id, rotation: Rotation): Free[PRG.Cop, Option[Picture]] = {
     for {
       p <- getPicture(id)
       _ <- p match {
@@ -44,12 +45,12 @@ object Pictures {
             _ <- Images.rotateImage(id, rotation).expand[PRG]
             _ <- Images.rotateThumbnail(id, rotation).expand[PRG]
           } yield Unit
-        case None => Free.pure[PRG#Cop, Unit](Unit)
+        case None => Free.pure[PRG.Cop, Unit](Unit)
       }
     } yield p
   }
 
-  def deletePicturesByAlbum(albumId: Albums.Id): Free[PRG#Cop, List[Result[PictureDeleted]]] = {
+  def deletePicturesByAlbum(albumId: Albums.Id): Free[PRG.Cop, List[Result[PictureDeleted]]] = {
       import cats.implicits._
       for {
         pictures <- getPictureByAlbum(albumId)
@@ -57,47 +58,47 @@ object Pictures {
       } yield deletes
   }
 
-  def deletePicture(id: Pictures.Id): Free[PRG#Cop, Result[PictureDeleted]] =
+  def deletePicture(id: Pictures.Id): Free[PRG.Cop, Result[PictureDeleted]] =
     for {
       _ <- Images.deleteImage(id).expand[PRG]
       _ <- Images.deleteThumbnail(id).expand[PRG]
       delete <- DeletePicture(id).freek[PRG]
     } yield delete
 
-  def getPicture(id: Pictures.Id): Free[PRG#Cop, Option[Picture]] =
+  def getPicture(id: Pictures.Id): Free[PRG.Cop, Option[Picture]] =
     for {
       picture <- GetPicture(id).freek[PRG]
     } yield picture
 
-  def getPictureByAlbum(albumId: Albums.Id): Free[PRG#Cop, List[Picture]] = {
+  def getPictureByAlbum(albumId: Albums.Id): Free[PRG.Cop, List[Picture]] = {
     for {
       pictures <- GetPictureByAlbum(albumId).freek[PRG]
     } yield pictures
   }
 
-  def getThumbnailsByAlbum(albumId: Albums.Id): Free[PRG#Cop, List[Picture]] = {
+  def getThumbnailsByAlbum(albumId: Albums.Id): Free[PRG.Cop, List[Picture]] = {
     for {
       pictures <- GetPictureByAlbum(albumId).freek[PRG]
     } yield pictures
   }
 
-  def listAll(): Free[PRG#Cop, List[Picture]] = {
+  def listAll(): Free[PRG.Cop, List[Picture]] = {
     for {
       pictures <- ListPictures.freek[PRG]
     } yield pictures
   }
 
-  def readImage(id: Pictures.Id): Free[PRG#Cop, Option[Array[Byte]]] =
+  def readImage(id: Pictures.Id): Free[PRG.Cop, Option[Array[Byte]]] =
     for {
       img <- Images.readImage(id).expand[PRG]
     } yield img.map(_.content)
 
-  def readThumbnail(id: Pictures.Id): Free[PRG#Cop, Option[Array[Byte]]] =
+  def readThumbnail(id: Pictures.Id): Free[PRG.Cop, Option[Array[Byte]]] =
     for {
       img <- Images.readThumbnail(id).expand[PRG]
     } yield img.map(_.content)
 
-  def validatePictureCreation(picture: Picture): Free[PRG#Cop, Result[Picture]] = {
+  def validatePictureCreation(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
     import scalaz.Scalaz._
     for {
       albumExists <- validateAlbumExists(picture)
@@ -105,7 +106,7 @@ object Pictures {
     } yield (albumExists |@| pictureDoesntExist) { (_, _) => picture}
   }
 
-  def validateAlbumExists(picture: Picture): Free[PRG#Cop, Result[Picture]] = {
+  def validateAlbumExists(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
     import scalaz.Scalaz._
     for {
       album <- Albums.getAlbum(picture.album).expand[PRG]
@@ -115,7 +116,7 @@ object Pictures {
     }
   }
 
-  def validatePictureExists(picture: Picture): Free[PRG#Cop, Result[Picture]] = {
+  def validatePictureExists(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
     import scalaz.Scalaz._
     for {
       pict <- GetPicture(picture.id).freek[PRG]
@@ -125,7 +126,7 @@ object Pictures {
     }
   }
 
-  def validatePictureDoesntExists(picture: Picture): Free[PRG#Cop, Result[Picture]] = {
+  def validatePictureDoesntExists(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
     import scalaz.Scalaz._
     for {
       pict <- GetPicture(picture.id).freek[PRG]

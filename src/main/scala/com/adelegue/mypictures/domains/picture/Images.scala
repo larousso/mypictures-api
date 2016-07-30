@@ -11,25 +11,25 @@ import org.json4s.JsonAST.JString
 object Images {
 
   type PRG = DSL :|: FXNil
+  val PRG = Program[PRG]
 
-
-  def readImage(id: Id): Free[PRG#Cop, Option[Image]] =
+  def readImage(id: Id): Free[PRG.Cop, Option[Image]] =
     for { img <- ReadImage(id).freek[PRG] } yield img
 
-  def createImage(id: Id, content: Array[Byte]): Free[PRG#Cop, Image] = CreateImage(id, content).freek[PRG]
+  def createImage(id: Id, content: Array[Byte]): Free[PRG.Cop, Image] = CreateImage(id, content).freek[PRG]
 
-  def rotateImage(id: Id, rotation: Rotation): Free[PRG#Cop, Image] = RotateImage(id, rotation).freek[PRG]
+  def rotateImage(id: Id, rotation: Rotation): Free[PRG.Cop, Image] = RotateImage(id, rotation).freek[PRG]
 
-  def deleteImage(id: Id): Free[PRG#Cop, Unit] = DeleteImage(id).freek[PRG]
+  def deleteImage(id: Id): Free[PRG.Cop, Unit] = DeleteImage(id).freek[PRG]
 
-  def readThumbnail(id: Id): Free[PRG#Cop, Option[Thumbnail]] =
+  def readThumbnail(id: Id): Free[PRG.Cop, Option[Thumbnail]] =
     for { thumb <- ReadThumbnail(id).freek[PRG] } yield thumb
 
-  def createThumbnail(id: Id, content: Array[Byte]): Free[PRG#Cop, Thumbnail] = CreateThumbnail(id, content).freek[PRG]
+  def createThumbnail(id: Id, content: Array[Byte]): Free[PRG.Cop, Thumbnail] = CreateThumbnail(id, content).freek[PRG]
 
-  def rotateThumbnail(id: Id, rotation: Rotation): Free[PRG#Cop, Thumbnail] = RotateThumbnail(id, rotation).freek[PRG]
+  def rotateThumbnail(id: Id, rotation: Rotation): Free[PRG.Cop, Thumbnail] = RotateThumbnail(id, rotation).freek[PRG]
 
-  def deleteThumbnail(id: Id): Free[PRG#Cop, Unit] = DeleteThumbnail(id).freek[PRG]
+  def deleteThumbnail(id: Id): Free[PRG.Cop, Unit] = DeleteThumbnail(id).freek[PRG]
 
   sealed trait DSL[A]
   type Id = String

@@ -13,18 +13,19 @@ import org.json4s.JsonAST._
 object Accounts {
 
   type PRG = DSL :|: FXNil
+  val PRG = Program[PRG]
 
-  def addAccount(account: Account): Free[PRG#Cop, Result[Accounts.AccountAdded]] =
+  def addAccount(account: Account): Free[PRG.Cop, Result[Accounts.AccountAdded]] =
     for {
       add <- AddAccount(account).freek[PRG]
     } yield add
 
-  def createOrUpdateAccount(account: Account): Free[PRG#Cop, Result[Accounts.AccountAdded]] = {
+  def createOrUpdateAccount(account: Account): Free[PRG.Cop, Result[Accounts.AccountAdded]] = {
     import scalaz.Scalaz._
     for {
       a <- getAccountByUsername(account.username)
       r <- a match {
-        case Some(a) => Free.pure[PRG#Cop, Result[Accounts.AccountAdded]](AccountAdded(account).successNel)
+        case Some(a) => Free.pure[PRG.Cop, Result[Accounts.AccountAdded]](AccountAdded(account).successNel)
         case None => for {
           added <- addAccount(account)
         } yield added
@@ -32,12 +33,12 @@ object Accounts {
     } yield r
   }
 
-  def getAccountByUsername(username: Username): Free[PRG#Cop, Option[Account]] =
+  def getAccountByUsername(username: Username): Free[PRG.Cop, Option[Account]] =
     for {
       get <- GetAccountByUsername(username).freek[PRG]
     } yield get
 
-  def listAll: Free[PRG#Cop, List[Account]] =
+  def listAll: Free[PRG.Cop, List[Account]] =
     for {
       list <- ListAll.freek[PRG]
     } yield list

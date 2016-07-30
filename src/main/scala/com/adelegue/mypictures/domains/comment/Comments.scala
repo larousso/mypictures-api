@@ -18,24 +18,26 @@ import scalaz.Failure
 object Comments {
 
   type PRG = Comments.DSL :|: Pictures.PRG
-
-  def getComment(id: Comments.Id): Free[PRG#Cop, Option[Comment]] = {
+  val PRG = Program[PRG]
+  
+  
+  def getComment(id: Comments.Id): Free[PRG.Cop, Option[Comment]] = {
     for {
       comment <- GetComment(id).freek[PRG]
     } yield comment
   }
 
-  def listCommentsByPicture(pictureId: Pictures.Id): Free[PRG#Cop, List[Comment]] = {
+  def listCommentsByPicture(pictureId: Pictures.Id): Free[PRG.Cop, List[Comment]] = {
     for {
       comments <- ListCommentsByPicture(pictureId).freek[PRG]
     } yield comments
   }
 
-  def createComment(comment: Comment): Free[PRG#Cop, Result[CommentCreated]] = {
+  def createComment(comment: Comment): Free[PRG.Cop, Result[CommentCreated]] = {
     for {
       validated <- validatePictureExists(comment)
       added <- validated.fold(
-        e => Free.pure[PRG#Cop, Result[CommentCreated]](Failure(e)),
+        e => Free.pure[PRG.Cop, Result[CommentCreated]](Failure(e)),
         c => for {
           a <- CreateComment(comment).freek[PRG]
         } yield a
@@ -43,11 +45,11 @@ object Comments {
     } yield added
   }
 
-  def updateComment(comment: Comment): Free[PRG#Cop, Result[CommentUpdated]] = {
+  def updateComment(comment: Comment): Free[PRG.Cop, Result[CommentUpdated]] = {
     for {
       validated <- validateCommentUpdate(comment)
       added <- validated.fold(
-        e => Free.pure[PRG#Cop, Result[CommentUpdated]](Failure(e)),
+        e => Free.pure[PRG.Cop, Result[CommentUpdated]](Failure(e)),
         c => for {
           a <- UpdateComment(comment).freek[PRG]
         } yield a
@@ -55,13 +57,13 @@ object Comments {
     } yield added
   }
 
-  def deleteComment(id: Comments.Id): Free[PRG#Cop, Result[CommentDeleted]] = {
+  def deleteComment(id: Comments.Id): Free[PRG.Cop, Result[CommentDeleted]] = {
     for {
       comment <- DeleteComment(id).freek[PRG]
     } yield comment
   }
 
-  def validateCommentExists(comment: Comment) : Free[PRG#Cop, Result[Comment]] = {
+  def validateCommentExists(comment: Comment) : Free[PRG.Cop, Result[Comment]] = {
     import scalaz.Scalaz._
     for {
       mayBe <- getComment(comment.id)
@@ -71,7 +73,7 @@ object Comments {
     }
   }
 
-  def validateCommentUpdate(comment: Comment) : Free[PRG#Cop, Result[Comment]] = {
+  def validateCommentUpdate(comment: Comment) : Free[PRG.Cop, Result[Comment]] = {
     import scalaz.Scalaz._
     for {
       exists <- validateCommentExists(comment)
@@ -79,7 +81,7 @@ object Comments {
     } yield (exists |@| pExists) { (_, _) => comment }
   }
 
-  def validatePictureExists(comment: Comment): Free[PRG#Cop, Result[Comment]] = {
+  def validatePictureExists(comment: Comment): Free[PRG.Cop, Result[Comment]] = {
     import scalaz.Scalaz._
     for {
       picture <- Pictures.getPicture(comment.pictureId).expand[PRG]

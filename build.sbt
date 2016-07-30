@@ -43,7 +43,7 @@ libraryDependencies ++= Seq(
   "org.json4s" %% "json4s-jackson" % "3.3.0",
   "org.json4s" %% "json4s-scalaz" % "3.3.0",
   "de.heikoseeberger" %% "akka-http-json4s" % "1.7.0",
-  "com.projectseptember" %% "freek" % "0.4.3",
+  "com.projectseptember" %% "freek" % "0.5.0",
   "org.typelevel" %% "cats" % "0.6.0",
   "org.typelevel" %% "cats-free" % "0.6.0",
   "org.typelevel" %% "cats-laws" % "0.6.0",
