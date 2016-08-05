@@ -1,18 +1,139 @@
 package com.adelegue.mypictures.domains.picture
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.server._
+import akka.stream.Materializer
+import akka.util.ByteString
 import cats.free.Free
+import com.adelegue.mypictures.domains.Auth
 import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
+import com.adelegue.mypictures.domains.account.Accounts.Role.Admin
 import com.adelegue.mypictures.domains.album.Albums
 import com.adelegue.mypictures.domains.picture.Images.Rotation
 import com.adelegue.mypictures.validation.Validation._
 import freek._
+import org.json4s.{Formats, Serialization}
 
-import scalaz.Failure
+import scala.concurrent.Future
+import scalaz.{Failure, Success}
 
 /**
   * Created by adelegue on 30/05/2016.
   */
 object Pictures {
+
+  object Api {
+
+    case class RotationAction(rotation: Images.Rotation) extends Serializable
+
+  }
+
+  case class Api(auth: Auth, interpreter: Interpreter[PRG.Cop, Future])(implicit system: ActorSystem, materializer: Materializer, serialization: Serialization, formats: Formats) {
+    import cats.std.future._
+    import system.dispatcher
+    import akka.http.scaladsl.model._
+    import akka.http.scaladsl.server.Directives._
+    import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+
+    def readPicture(pictureId: Pictures.Id): Route =
+      get {
+        onSuccess(Pictures.getPicture(pictureId).interpret(interpreter)) {
+          case Some(p) => complete(p)
+          case None => complete(StatusCodes.NotFound)
+        }
+      }
+
+    def readPictures(albumId: Albums.Id): Route =
+      get {
+        onSuccess(Pictures.getPictureByAlbum(albumId).interpret(interpreter)) { pictures =>
+          complete(StatusCodes.OK -> pictures)
+        }
+      }
+
+    def readImage(): Route =
+      auth.isAuthenticated {
+        pathPrefix("images") {
+          path("[a-z0-9\\-]+".r) { pictureId =>
+            onSuccess(Pictures.readImage(pictureId).interpret(interpreter)) {
+              case Some(byteArray) =>
+                complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
+              case None =>
+                complete(HttpResponse(StatusCodes.NotFound))
+            }
+          }
+        }
+      }
+
+    def readThumbnails(): Route =
+      pathPrefix("thumbnails") {
+        path("[a-z0-9\\-]+".r) { pictureId =>
+          onSuccess(Pictures.readThumbnail(pictureId).interpret(interpreter)) {
+            case Some(byteArray) =>
+              complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
+            case None =>
+              complete(HttpResponse(StatusCodes.NotFound))
+          }
+        }
+      }
+
+    def route(albumId: Albums.Id)(subRoute: Pictures.Id=> Route): Route = {
+      pathPrefix("pictures") {
+        pathEnd {
+          readPictures(albumId)
+        } ~
+          pathPrefix("[a-z0-9\\-]+".r) { pictureId: Pictures.Id =>
+            pathEnd {
+              post {
+                auth.hashRole(Admin) {
+                  extractRequestContext { ctx =>
+                    fileUpload("file") {
+                      case (metadata, byteSource) =>
+                        val filename: Pictures.Filename = metadata.fileName
+                        metadata.contentType.mediaType.fileExtensions
+                        val imgType: Pictures.Type = "image/jpeg"
+                        val picture = Pictures.Picture(pictureId, filename, imgType, albumId)
+                        onSuccess(byteSource
+                          .runFold(ByteString.empty)(_ ++ _)
+                          .map(_.toArray[Byte])
+                          .flatMap { fileContent =>
+                            Pictures.createPicture(picture, fileContent).interpret(interpreter)
+                          }) {
+                          case Success(p) => complete(StatusCodes.Created -> p.picture)
+                          case Failure(e) => complete(StatusCodes.BadRequest -> e)
+                        }
+                    }
+                  }
+                }
+              } ~ readPicture(pictureId) ~
+                put {
+                  entity(as[Pictures.Picture]) { picture =>
+                    onSuccess(Pictures.updatePicture(picture).interpret(interpreter)) {
+                      case Success(p) => complete(StatusCodes.OK -> p.picture)
+                      case Failure(e) => complete(StatusCodes.BadRequest -> e)
+                    }
+                  }
+                } ~
+                delete {
+                  onSuccess(Pictures.deletePicture(pictureId).interpret(interpreter)) { _ =>
+                    complete(StatusCodes.NoContent)
+                  }
+                }
+            } ~
+              path("_rotation") {
+                post {
+                  entity(as[Api.RotationAction]) { action =>
+                    onSuccess(Pictures.rotatePicture(pictureId, action.rotation).interpret(interpreter)) {
+                      case Some(p) => complete(StatusCodes.OK -> p)
+                      case None => complete(StatusCodes.NotFound -> pictureId)
+                    }
+                  }
+                }
+              } ~
+              subRoute(pictureId)
+          }
+      }
+    }
+  }
 
   type PRG = Pictures.DSL :|: Images.DSL :|: Albums.PRG
   val PRG = Program[PRG]

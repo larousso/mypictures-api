@@ -1,16 +1,44 @@
 package com.adelegue.mypictures.domains.account
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.marshalling._
+import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
 import com.adelegue.mypictures.validation.Validation.Result
 import cats.free.Free
 import freek._
-import org.json4s.CustomSerializer
+import org.json4s.{CustomSerializer, Formats, Serialization}
 import org.json4s.JsonAST._
 
+import scala.concurrent.Future
 /**
   * Created by adelegue on 24/05/2016.
   */
 object Accounts {
+
+  case class Api(interpreter: Interpreter[PRG.Cop, Future])(implicit system: ActorSystem, serialization: Serialization, formats: Formats) {
+    import cats.std.future._
+    import system.dispatcher
+    import akka.http.scaladsl.model._
+    import akka.http.scaladsl.server.Directives._
+    import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+
+    def route(subRoute: Accounts.Username => Route): Route = {
+        pathPrefix("accounts" / "\\w+".r) { username: Accounts.Username =>
+          pathEnd {
+            get {
+              onSuccess(Accounts.getAccountByUsername(username).interpret(interpreter)) {
+                case Some(a) => complete(a)
+                case None => complete(StatusCodes.NotFound)
+              }
+            }
+          } ~
+          subRoute(username)
+        }
+      }
+    }
 
   type PRG = DSL :|: FXNil
   val PRG = Program[PRG]

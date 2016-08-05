@@ -1,7 +1,11 @@
 package com.adelegue.mypictures.domains.comment
 
-import java.util.Date
+import java.util.{Date, UUID}
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import cats.free.Free
 import com.adelegue.mypictures.validation.Validation._
 import com.adelegue.mypictures.domains.picture.Pictures
@@ -9,13 +13,64 @@ import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
 import com.adelegue.mypictures.domains.album.Albums
 import com.adelegue.mypictures.domains.comment.Comments._
 import freek._
+import org.json4s.{Formats, Serialization}
 
-import scalaz.Failure
+import scala.concurrent.Future
+import scalaz.{Failure, Success}
 
 /**
   * Created by adelegue on 17/07/2016.
   */
 object Comments {
+
+  object Api {
+    case class Comment(name: String, comment: String, date: Date = new Date())
+  }
+
+
+  case class Api(commentInterpreter: Interpreter[PRG.Cop, Future])(implicit system: ActorSystem, serialization: Serialization, formats: Formats) {
+    import cats.std.future._
+    import system.dispatcher
+    import akka.http.scaladsl.model._
+    import akka.http.scaladsl.server.Directives._
+    import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+
+
+    def route(pictureId: Pictures.Id) : Route  =
+    pathPrefix("comments") {
+      pathEnd {
+        get {
+          onSuccess(Comments.listCommentsByPicture(pictureId).interpret(commentInterpreter)) {
+            case l => complete(l)
+          }
+        } ~
+          post {
+            entity(as[Api.Comment]) { comment =>
+              onSuccess(Comments.createComment(Comments.Comment(UUID.randomUUID.toString, pictureId, comment.name, comment.comment, comment.date)).interpret(commentInterpreter)) {
+                case Success(c) => complete(StatusCodes.OK -> c.comment)
+                case Failure(e) => complete(StatusCodes.BadRequest -> e)
+              }
+            }
+          }
+      } ~
+        path("[a-z0-9\\-]+".r) { commentId =>
+          put {
+            entity(as[Comments.Comment]) { comment =>
+              onSuccess(Comments.updateComment(comment).interpret(commentInterpreter)) {
+                case Success(c) => complete(StatusCodes.OK -> c.comment)
+                case Failure(e) => complete(StatusCodes.BadRequest -> e)
+              }
+            }
+          } ~
+            delete {
+              onSuccess(Comments.deleteComment(commentId).interpret(commentInterpreter)) {
+                case Success(c) => complete(StatusCodes.OK -> c)
+                case Failure(e) => complete(StatusCodes.BadRequest -> e)
+              }
+            }
+        }
+    }
+  }
 
   type PRG = Comments.DSL :|: Pictures.PRG
   val PRG = Program[PRG]
