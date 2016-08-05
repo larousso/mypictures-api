@@ -9,6 +9,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import cats._
+import cats.std.future._
+import ch.megard.akka.http.cors.CorsDirectives._
 import ch.megard.akka.http.cors.CorsSettings
 import com.adelegue.mypictures.domains.account.Accounts
 import com.adelegue.mypictures.domains.account.Accounts.{Role, _}
@@ -17,35 +19,30 @@ import com.adelegue.mypictures.domains.comment.Comments
 import com.adelegue.mypictures.domains.picture.Images.RotationSerializer
 import com.adelegue.mypictures.domains.picture.{Images, Pictures}
 import com.typesafe.config.Config
+import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+import freek._
 import org.json4s.JsonAST.JString
 import org.json4s.{CustomSerializer, DefaultFormats, jackson}
 
+import scala.collection.JavaConversions._
 import scala.collection.immutable
 import scala.concurrent.Future
+
 /**
   * Created by adelegue on 30/06/2016.
   */
 object Api {
 
   case class LoginForm(username: Option[String], password: Option[String]) extends Serializable
-
   case class SessionUser(username: Username, role: Role, sessionType: SessionType)
   case class Session(user: Option[SessionUser], redirect: Option[String] = None)
 
-  sealed trait SessionType {
-    def sessionType: String
-  }
+  sealed trait SessionType { def sessionType: String }
+  case object Facebook extends SessionType { override val sessionType = "facebook" }
 
-  case object Facebook extends SessionType {
-    override val sessionType = "facebook"
-  }
+  case object Custom extends SessionType { override val sessionType = "custom" }
 
-  case object Custom extends SessionType {
-    override val sessionType = "custom"
-  }
-
-  class SessionTypeSerializer extends CustomSerializer[SessionType](format => (
-  {
+  class SessionTypeSerializer extends CustomSerializer[SessionType](format => ({
     case JString(s) if s == Facebook.sessionType =>
       Facebook
     case JString(s) if s == Custom.sessionType =>
@@ -60,16 +57,11 @@ object Api {
 
 class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DSL ~> Future, pict: Pictures.DSL ~> Future, comm: Comments.DSL ~> Future)(implicit system: ActorSystem, materializer: Materializer) {
 
-  import cats.std.future._
-  import ch.megard.akka.http.cors.CorsDirectives._
-  import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
-  import freek._
+
   import system.dispatcher
-
-  import collection.JavaConversions._
-
   implicit val serialization = jackson.Serialization
   implicit val formats = new DefaultFormats { override def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") } + new RoleSerializer + new RotationSerializer
+
 
   val accountInterpreter = acc
   val albumInterpreter = alb :&: accountInterpreter
