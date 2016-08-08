@@ -95,6 +95,9 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
         pathPrefix("api") {
           auth.loginApi ~
           auth.isAuthenticated {
+            path("pictures" / "[a-z0-9\\-]+".r) { pictureId: Pictures.Id =>
+              pictureApi.readPicture(pictureId)
+            } ~
             pathPrefix("albums" / "[a-z0-9\\-]+".r) { albumId: Albums.Id =>
               albumApi.readAlbum(albumId) ~
                 path("pictures") {
