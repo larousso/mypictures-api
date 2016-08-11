@@ -30,6 +30,7 @@ class FreeMonadSpec extends Specification {
 
 
     type PGR = DSL :|: FXNil
+    val PRG = Program[PGR]
 
     def foo(a: String) =
       for {
@@ -58,13 +59,14 @@ class FreeMonadSpec extends Specification {
   object Api1 {
 
     type PRG = Api1.DSL :|: Api.PGR
+    val PRG = Program[PRG]
 
-    def foo(a: String): Free[PRG#Cop, Response] = for {
+    def foo(a: String): Free[PRG.Cop, Response] = for {
         r <- Api.foo(a).expand[PRG]
         a <- Foo(r.message).freek[PRG]
     } yield a
 
-    def bar(): Free[PRG#Cop, String] = for { b <- Bar().freek[PRG] } yield b
+    def bar(): Free[PRG.Cop, String] = for { b <- Bar().freek[PRG] } yield b
 
     case class Response(message: String)
     sealed trait DSL[A]

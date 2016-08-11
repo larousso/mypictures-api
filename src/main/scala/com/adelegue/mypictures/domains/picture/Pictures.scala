@@ -114,7 +114,7 @@ object Pictures {
                   }
                 } ~
                 delete {
-                  onSuccess(Pictures.deletePicture(pictureId).interpret(interpreter)) { _ =>
+                  onSuccess(Pictures.deletePicture(albumId, pictureId).interpret(interpreter)) { _ =>
                     complete(StatusCodes.NoContent)
                   }
                 }
@@ -144,8 +144,9 @@ object Pictures {
       created <- ok.fold(
         e => Free.pure[PRG.Cop, Result[PictureCreated]](Failure(e)),
         p => for {
-          image <- Images.createImage(picture.id, content).expand[PRG]
-          thumbnail <- Images.createThumbnail(picture.id, content).expand[PRG]
+          _ <- Images.createImage(picture.id, content).expand[PRG]
+          _ <- Images.createThumbnail(picture.id, content).expand[PRG]
+          _ <- Albums.addPicture(picture.album, picture.id).expand[PRG]
           created <- CreatePicture(picture).freek[PRG]
         } yield created
       )
@@ -175,14 +176,15 @@ object Pictures {
       import cats.implicits._
       for {
         pictures <- getPictureByAlbum(albumId)
-        deletes <- pictures.traverseU { p => deletePicture(p.id) }
+        deletes <- pictures.traverseU { p => deletePicture(albumId, p.id) }
       } yield deletes
   }
 
-  def deletePicture(id: Pictures.Id): Free[PRG.Cop, Result[PictureDeleted]] =
+  def deletePicture(albumId: Albums.Id, id: Pictures.Id): Free[PRG.Cop, Result[PictureDeleted]] =
     for {
       _ <- Images.deleteImage(id).expand[PRG]
       _ <- Images.deleteThumbnail(id).expand[PRG]
+      _ <- Albums.removePicture(albumId, id).expand[PRG]
       delete <- DeletePicture(id).freek[PRG]
     } yield delete
 

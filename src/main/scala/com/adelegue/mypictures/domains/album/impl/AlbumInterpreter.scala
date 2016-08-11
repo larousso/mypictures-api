@@ -41,7 +41,10 @@ class AlbumInterpreter(system: ActorSystem) extends (Albums.DSL ~> Future) {
       (ref ? q).mapTo[List[Album]].asInstanceOf[Future[A]]
     case ListAlbums =>
       (ref ? ListAlbums).mapTo[List[Album]].asInstanceOf[Future[A]]
-
+    case c: AddPicture =>
+      (ref ? c).mapTo[PictureAdded].asInstanceOf[Future[A]]
+    case c: RemovePicture =>
+      (ref ? c).mapTo[PictureRemoved].asInstanceOf[Future[A]]
   }
 }
 
@@ -76,6 +79,10 @@ class AlbumStoreActor extends PersistentActor {
       self forward Persist(AlbumUpdated(album))
     case DeleteAlbum(id) =>
       self forward Persist(AlbumDeleted(id))
+    case AddPicture(id, pictureId) =>
+      self forward Persist(PictureAdded(id, pictureId))
+    case RemovePicture(id, pictureId) =>
+      self forward Persist(PictureRemoved(id, pictureId))
     case Persist(albumEvent: AlbumEvent) =>
       persist(albumEvent) { event =>
         updateState(event)
@@ -103,6 +110,18 @@ case class AlbumState(albums: Map[Albums.Id, Album] = Map.empty) {
       AlbumState(albums + (album.id -> album))
     case AlbumDeleted(id) =>
       AlbumState(albums.filterKeys(_ != id))
+    case PictureAdded(albumId, pictureId) =>
+      AlbumState(albums.map {
+        case (id, album) if id == albumId =>
+          (id, album.copy(pictureIds = pictureId :: album.pictureIds))
+        case any => any
+      })
+    case PictureRemoved(albumId, pictureId) =>
+      AlbumState(albums.map {
+        case (id, album) if id == albumId =>
+          (id, album.copy(pictureIds = album.pictureIds.filterNot(_ == pictureId)))
+        case any => any
+      })
     case _ => throw new UnknowEventException()
   }
 

@@ -66,8 +66,8 @@ class PicturesSpec extends Specification {
       val expectedImg = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-resized.jpg"))
       val expectedThumbnail = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-thumbnail.jpg"))
 
-      img must beEqualTo(expectedImg)
-      thumbnail must beEqualTo(expectedThumbnail)
+      img must beSome(expectedImg)
+      thumbnail must beSome(expectedThumbnail)
 
       val read = await(Pictures.getPicture("12345").interpret(interpreter))
 
@@ -117,8 +117,8 @@ class PicturesSpec extends Specification {
       val expectedImg = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-resized.jpg"))
       val expectedThumbnail = Files.readAllBytes(Paths.get("src/test/resources/images/tkd-thumbnail.jpg"))
 
-      img must beEqualTo(expectedImg)
-      thumbnail must beEqualTo(expectedThumbnail)
+      img must beSome(expectedImg)
+      thumbnail must beSome(expectedThumbnail)
 
       val read = await(Pictures.getPicture("12345").interpret(interpreter))
 

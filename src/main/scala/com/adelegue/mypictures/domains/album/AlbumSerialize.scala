@@ -2,9 +2,12 @@ package com.adelegue.mypictures.domains.album
 
 import java.nio.charset.Charset
 import java.util.Date
+import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import akka.serialization.SerializerWithStringManifest
 import Albums._
+import com.adelegue.mypictures.domains.picture.Pictures
 /**
   * Created by adelegue on 25/05/2016.
   */
@@ -50,9 +53,11 @@ class AlbumSerialize extends SerializerWithStringManifest {
       .setUsername(a.username)
       .setTitle(a.title)
       .setDate(a.date.getTime)
+      .addAllPictures(a.pictureIds)
       a.description.foreach(builder.setDescription)
       builder.build()
   }
+
 
   private def albumCreated(a: AlbumModels.AlbumCreated) = AlbumCreated(album(a.getAlbum))
 
@@ -60,6 +65,8 @@ class AlbumSerialize extends SerializerWithStringManifest {
 
   private def albumDeleted(a: AlbumModels.AlbumDeleted) = AlbumDeleted(a.getId)
 
-  private def album(p: AlbumModels.Album) = Album(p.getId, p.getUsername, p.getTitle, Option(p.getDescription), new Date(p.getDate))
+  private def album(p: AlbumModels.Album) = Album(p.getId, p.getUsername, p.getTitle, Option(p.getDescription), new Date(p.getDate), getPictures(p))
+
+  private def getPictures(p: AlbumModels.Album): List[Pictures.Id] = Option(p.getPicturesList).map(_.iterator().asScala.toList).getOrElse(List.empty[Pictures.Id])
 
 }

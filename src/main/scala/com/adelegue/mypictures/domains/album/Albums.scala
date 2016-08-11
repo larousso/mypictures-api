@@ -3,9 +3,7 @@ package com.adelegue.mypictures.domains.album
 import java.util.{Date, UUID}
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling._
 import akka.http.scaladsl.server._
-import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.free.Free
 import com.adelegue.mypictures.domains.Auth
 import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
@@ -29,7 +27,7 @@ object Albums {
 
   object Api {
 
-    case class Album(title: Albums.Title, description: Option[Albums.Description], date: Date = new Date())
+    case class Album(title: Albums.Title, description: Option[Albums.Description], date: Date = new Date(), pictureIds: List[Pictures.Id] = List.empty[Pictures.Id])
 
   }
 
@@ -61,8 +59,8 @@ object Albums {
               post {
                 auth.hashRole(Admin) {
                   entity(as[Api.Album]) {
-                    case Api.Album(title, description, date) =>
-                      onSuccess(Albums.createAlbum(Albums.Album(UUID.randomUUID.toString, username, title, description, date)).interpret(interpreter)) {
+                    case Api.Album(title, description, date, pictureIds) =>
+                      onSuccess(Albums.createAlbum(Albums.Album(UUID.randomUUID.toString, username, title, description, date, pictureIds)).interpret(interpreter)) {
                         case Success(a) => complete(StatusCodes.Created -> a.album)
                         case Failure(e) => complete(StatusCodes.BadRequest -> e)
                       }
@@ -129,6 +127,16 @@ object Albums {
       )
     } yield command
 
+  def addPicture(albumId: Albums.Id, pictureId: Pictures.Id): Free[PRG.Cop, PictureAdded] =
+    for {
+      e <- AddPicture(albumId, pictureId).freek[PRG]
+    } yield e
+
+  def removePicture(albumId: Albums.Id, pictureId: Pictures.Id): Free[PRG.Cop, PictureRemoved] =
+    for {
+      e <- RemovePicture(albumId, pictureId).freek[PRG]
+    } yield e
+
   def deleteAlbum(id: Id): Free[PRG.Cop, Result[AlbumDeleted]] =
     for {
       delete <- DeleteAlbum(id).freek[PRG]
@@ -184,7 +192,7 @@ object Albums {
   type Title = String
   type Description = String
 
-  case class Album(id: Id, username: Username, title: Title, description: Option[Description], date: Date = new Date())
+  case class Album(id: Id, username: Username, title: Title, description: Option[Description], date: Date = new Date(), pictureIds: List[Pictures.Id] = List.empty[Pictures.Id])
 
   sealed trait DSL[A]
 
@@ -196,6 +204,10 @@ object Albums {
 
   case class DeleteAlbum(id: Id) extends AlbumCommand with DSL[Result[AlbumDeleted]]
 
+  case class AddPicture(id: Id, pictureId: Pictures.Id) extends AlbumCommand with DSL[PictureAdded]
+
+  case class RemovePicture(id: Id, pictureId: Pictures.Id) extends AlbumCommand with DSL[PictureRemoved]
+
   sealed trait AlbumEvent extends Evt
 
   case class AlbumCreated(album: Album) extends AlbumEvent
@@ -203,6 +215,10 @@ object Albums {
   case class AlbumUpdated(album: Album) extends AlbumEvent
 
   case class AlbumDeleted(id: Id) extends AlbumEvent
+
+  case class PictureAdded(id: Id, pictureId: Pictures.Id) extends AlbumEvent
+
+  case class PictureRemoved(id: Id, pictureId: Pictures.Id) extends AlbumEvent
 
   sealed trait AlbumQuery extends Query
 

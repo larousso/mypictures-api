@@ -48,7 +48,7 @@ class ImagesSpec extends Specification {
       val created = await(Images.createImage("12345", imageBytes).interpret(interpreter))
       val read = await(Images.readImage("12345").interpret(interpreter))
 
-      created.content must equalTo(read.content)
+      created.content must equalTo(read.get.content)
     }
 
     "rotate image" in new TmpFolderSpec2 () {

@@ -76,6 +76,25 @@ public final class AlbumModels {
      * <code>required int64 date = 5;</code>
      */
     long getDate();
+
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    com.google.protobuf.ProtocolStringList
+        getPicturesList();
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    int getPicturesCount();
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    java.lang.String getPictures(int index);
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getPicturesBytes(int index);
   }
   /**
    * Protobuf type {@code Album}
@@ -158,6 +177,15 @@ public final class AlbumModels {
               date_ = input.readInt64();
               break;
             }
+            case 50: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+                pictures_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000020;
+              }
+              pictures_.add(bs);
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -166,6 +194,9 @@ public final class AlbumModels {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+          pictures_ = pictures_.getUnmodifiableView();
+        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
@@ -381,12 +412,42 @@ public final class AlbumModels {
       return date_;
     }
 
+    public static final int PICTURES_FIELD_NUMBER = 6;
+    private com.google.protobuf.LazyStringList pictures_;
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    public com.google.protobuf.ProtocolStringList
+        getPicturesList() {
+      return pictures_;
+    }
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    public int getPicturesCount() {
+      return pictures_.size();
+    }
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    public java.lang.String getPictures(int index) {
+      return pictures_.get(index);
+    }
+    /**
+     * <code>repeated string pictures = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPicturesBytes(int index) {
+      return pictures_.getByteString(index);
+    }
+
     private void initFields() {
       id_ = "";
       username_ = "";
       title_ = "";
       description_ = "";
       date_ = 0L;
+      pictures_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -432,6 +493,9 @@ public final class AlbumModels {
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         output.writeInt64(5, date_);
       }
+      for (int i = 0; i < pictures_.size(); i++) {
+        output.writeBytes(6, pictures_.getByteString(i));
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -460,6 +524,15 @@ public final class AlbumModels {
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(5, date_);
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < pictures_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeBytesSizeNoTag(pictures_.getByteString(i));
+        }
+        size += dataSize;
+        size += 1 * getPicturesList().size();
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -588,6 +661,8 @@ public final class AlbumModels {
         bitField0_ = (bitField0_ & ~0x00000008);
         date_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000010);
+        pictures_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
 
@@ -636,6 +711,11 @@ public final class AlbumModels {
           to_bitField0_ |= 0x00000010;
         }
         result.date_ = date_;
+        if (((bitField0_ & 0x00000020) == 0x00000020)) {
+          pictures_ = pictures_.getUnmodifiableView();
+          bitField0_ = (bitField0_ & ~0x00000020);
+        }
+        result.pictures_ = pictures_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -674,6 +754,16 @@ public final class AlbumModels {
         }
         if (other.hasDate()) {
           setDate(other.getDate());
+        }
+        if (!other.pictures_.isEmpty()) {
+          if (pictures_.isEmpty()) {
+            pictures_ = other.pictures_;
+            bitField0_ = (bitField0_ & ~0x00000020);
+          } else {
+            ensurePicturesIsMutable();
+            pictures_.addAll(other.pictures_);
+          }
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1050,6 +1140,99 @@ public final class AlbumModels {
       public Builder clearDate() {
         bitField0_ = (bitField0_ & ~0x00000010);
         date_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private com.google.protobuf.LazyStringList pictures_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensurePicturesIsMutable() {
+        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
+          pictures_ = new com.google.protobuf.LazyStringArrayList(pictures_);
+          bitField0_ |= 0x00000020;
+         }
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public com.google.protobuf.ProtocolStringList
+          getPicturesList() {
+        return pictures_.getUnmodifiableView();
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public int getPicturesCount() {
+        return pictures_.size();
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public java.lang.String getPictures(int index) {
+        return pictures_.get(index);
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPicturesBytes(int index) {
+        return pictures_.getByteString(index);
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public Builder setPictures(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensurePicturesIsMutable();
+        pictures_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public Builder addPictures(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensurePicturesIsMutable();
+        pictures_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public Builder addAllPictures(
+          java.lang.Iterable<java.lang.String> values) {
+        ensurePicturesIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, pictures_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public Builder clearPictures() {
+        pictures_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string pictures = 6;</code>
+       */
+      public Builder addPicturesBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensurePicturesIsMutable();
+        pictures_.add(value);
         onChanged();
         return this;
       }
@@ -2626,13 +2809,13 @@ public final class AlbumModels {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\021AlbumModels.proto\"W\n\005Album\022\n\n\002id\030\001 \002(\t" +
+      "\n\021AlbumModels.proto\"i\n\005Album\022\n\n\002id\030\001 \002(\t" +
       "\022\020\n\010username\030\002 \002(\t\022\r\n\005title\030\003 \002(\t\022\023\n\013des" +
-      "cription\030\004 \001(\t\022\014\n\004date\030\005 \002(\003\"%\n\014AlbumCre" +
-      "ated\022\025\n\005album\030\001 \002(\0132\006.Album\"%\n\014AlbumUpda" +
-      "ted\022\025\n\005album\030\001 \002(\0132\006.Album\"\032\n\014AlbumDelet" +
-      "ed\022\n\n\002id\030\001 \002(\tB)\n%com.adelegue.mypicture" +
-      "s.domains.albumH\001"
+      "cription\030\004 \001(\t\022\014\n\004date\030\005 \002(\003\022\020\n\010pictures" +
+      "\030\006 \003(\t\"%\n\014AlbumCreated\022\025\n\005album\030\001 \002(\0132\006." +
+      "Album\"%\n\014AlbumUpdated\022\025\n\005album\030\001 \002(\0132\006.A" +
+      "lbum\"\032\n\014AlbumDeleted\022\n\n\002id\030\001 \002(\tB)\n%com." +
+      "adelegue.mypictures.domains.albumH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2651,7 +2834,7 @@ public final class AlbumModels {
     internal_static_Album_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_Album_descriptor,
-        new java.lang.String[] { "Id", "Username", "Title", "Description", "Date", });
+        new java.lang.String[] { "Id", "Username", "Title", "Description", "Date", "Pictures", });
     internal_static_AlbumCreated_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_AlbumCreated_fieldAccessorTable = new
