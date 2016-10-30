@@ -2780,6 +2780,1304 @@ public final class AlbumModels {
     // @@protoc_insertion_point(class_scope:AlbumDeleted)
   }
 
+  public interface PictureAddedOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:PictureAdded)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    boolean hasAlbumId();
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    java.lang.String getAlbumId();
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getAlbumIdBytes();
+
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    boolean hasPictureId();
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    java.lang.String getPictureId();
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getPictureIdBytes();
+  }
+  /**
+   * Protobuf type {@code PictureAdded}
+   */
+  public static final class PictureAdded extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:PictureAdded)
+      PictureAddedOrBuilder {
+    // Use PictureAdded.newBuilder() to construct.
+    private PictureAdded(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private PictureAdded(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final PictureAdded defaultInstance;
+    public static PictureAdded getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public PictureAdded getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private PictureAdded(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              albumId_ = bs;
+              break;
+            }
+            case 18: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              pictureId_ = bs;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureAdded_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureAdded_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded.class, com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<PictureAdded> PARSER =
+        new com.google.protobuf.AbstractParser<PictureAdded>() {
+      public PictureAdded parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new PictureAdded(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<PictureAdded> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    public static final int ALBUMID_FIELD_NUMBER = 1;
+    private java.lang.Object albumId_;
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    public boolean hasAlbumId() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    public java.lang.String getAlbumId() {
+      java.lang.Object ref = albumId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          albumId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getAlbumIdBytes() {
+      java.lang.Object ref = albumId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        albumId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int PICTUREID_FIELD_NUMBER = 2;
+    private java.lang.Object pictureId_;
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    public boolean hasPictureId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    public java.lang.String getPictureId() {
+      java.lang.Object ref = pictureId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          pictureId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPictureIdBytes() {
+      java.lang.Object ref = pictureId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        pictureId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private void initFields() {
+      albumId_ = "";
+      pictureId_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      if (!hasAlbumId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPictureId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getAlbumIdBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getPictureIdBytes());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getAlbumIdBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getPictureIdBytes());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code PictureAdded}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:PictureAdded)
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureAddedOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureAdded_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureAdded_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded.class, com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded.Builder.class);
+      }
+
+      // Construct using com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        albumId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        pictureId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureAdded_descriptor;
+      }
+
+      public com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded getDefaultInstanceForType() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded.getDefaultInstance();
+      }
+
+      public com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded build() {
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded buildPartial() {
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded result = new com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.albumId_ = albumId_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.pictureId_ = pictureId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded) {
+          return mergeFrom((com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded other) {
+        if (other == com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded.getDefaultInstance()) return this;
+        if (other.hasAlbumId()) {
+          bitField0_ |= 0x00000001;
+          albumId_ = other.albumId_;
+          onChanged();
+        }
+        if (other.hasPictureId()) {
+          bitField0_ |= 0x00000002;
+          pictureId_ = other.pictureId_;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasAlbumId()) {
+          
+          return false;
+        }
+        if (!hasPictureId()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (com.adelegue.mypictures.domains.album.AlbumModels.PictureAdded) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object albumId_ = "";
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public boolean hasAlbumId() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public java.lang.String getAlbumId() {
+        java.lang.Object ref = albumId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            albumId_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getAlbumIdBytes() {
+        java.lang.Object ref = albumId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          albumId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public Builder setAlbumId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        albumId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public Builder clearAlbumId() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        albumId_ = getDefaultInstance().getAlbumId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public Builder setAlbumIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        albumId_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object pictureId_ = "";
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public boolean hasPictureId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public java.lang.String getPictureId() {
+        java.lang.Object ref = pictureId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            pictureId_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPictureIdBytes() {
+        java.lang.Object ref = pictureId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          pictureId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public Builder setPictureId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        pictureId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public Builder clearPictureId() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        pictureId_ = getDefaultInstance().getPictureId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public Builder setPictureIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        pictureId_ = value;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:PictureAdded)
+    }
+
+    static {
+      defaultInstance = new PictureAdded(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:PictureAdded)
+  }
+
+  public interface PictureRemovedOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:PictureRemoved)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    boolean hasAlbumId();
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    java.lang.String getAlbumId();
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getAlbumIdBytes();
+
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    boolean hasPictureId();
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    java.lang.String getPictureId();
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getPictureIdBytes();
+  }
+  /**
+   * Protobuf type {@code PictureRemoved}
+   */
+  public static final class PictureRemoved extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:PictureRemoved)
+      PictureRemovedOrBuilder {
+    // Use PictureRemoved.newBuilder() to construct.
+    private PictureRemoved(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private PictureRemoved(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final PictureRemoved defaultInstance;
+    public static PictureRemoved getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public PictureRemoved getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private PictureRemoved(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              albumId_ = bs;
+              break;
+            }
+            case 18: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              pictureId_ = bs;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureRemoved_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureRemoved_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved.class, com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<PictureRemoved> PARSER =
+        new com.google.protobuf.AbstractParser<PictureRemoved>() {
+      public PictureRemoved parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new PictureRemoved(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<PictureRemoved> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    public static final int ALBUMID_FIELD_NUMBER = 1;
+    private java.lang.Object albumId_;
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    public boolean hasAlbumId() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    public java.lang.String getAlbumId() {
+      java.lang.Object ref = albumId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          albumId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string albumId = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getAlbumIdBytes() {
+      java.lang.Object ref = albumId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        albumId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int PICTUREID_FIELD_NUMBER = 2;
+    private java.lang.Object pictureId_;
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    public boolean hasPictureId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    public java.lang.String getPictureId() {
+      java.lang.Object ref = pictureId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          pictureId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string pictureId = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPictureIdBytes() {
+      java.lang.Object ref = pictureId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        pictureId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private void initFields() {
+      albumId_ = "";
+      pictureId_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      if (!hasAlbumId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPictureId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getAlbumIdBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getPictureIdBytes());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getAlbumIdBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getPictureIdBytes());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code PictureRemoved}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:PictureRemoved)
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureRemovedOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureRemoved_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureRemoved_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved.class, com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved.Builder.class);
+      }
+
+      // Construct using com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        albumId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        pictureId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.internal_static_PictureRemoved_descriptor;
+      }
+
+      public com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved getDefaultInstanceForType() {
+        return com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved.getDefaultInstance();
+      }
+
+      public com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved build() {
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved buildPartial() {
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved result = new com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.albumId_ = albumId_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.pictureId_ = pictureId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved) {
+          return mergeFrom((com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved other) {
+        if (other == com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved.getDefaultInstance()) return this;
+        if (other.hasAlbumId()) {
+          bitField0_ |= 0x00000001;
+          albumId_ = other.albumId_;
+          onChanged();
+        }
+        if (other.hasPictureId()) {
+          bitField0_ |= 0x00000002;
+          pictureId_ = other.pictureId_;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasAlbumId()) {
+          
+          return false;
+        }
+        if (!hasPictureId()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (com.adelegue.mypictures.domains.album.AlbumModels.PictureRemoved) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object albumId_ = "";
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public boolean hasAlbumId() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public java.lang.String getAlbumId() {
+        java.lang.Object ref = albumId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            albumId_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getAlbumIdBytes() {
+        java.lang.Object ref = albumId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          albumId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public Builder setAlbumId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        albumId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public Builder clearAlbumId() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        albumId_ = getDefaultInstance().getAlbumId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string albumId = 1;</code>
+       */
+      public Builder setAlbumIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        albumId_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object pictureId_ = "";
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public boolean hasPictureId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public java.lang.String getPictureId() {
+        java.lang.Object ref = pictureId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            pictureId_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPictureIdBytes() {
+        java.lang.Object ref = pictureId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          pictureId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public Builder setPictureId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        pictureId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public Builder clearPictureId() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        pictureId_ = getDefaultInstance().getPictureId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string pictureId = 2;</code>
+       */
+      public Builder setPictureIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        pictureId_ = value;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:PictureRemoved)
+    }
+
+    static {
+      defaultInstance = new PictureRemoved(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:PictureRemoved)
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_Album_descriptor;
   private static
@@ -2800,6 +4098,16 @@ public final class AlbumModels {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_AlbumDeleted_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_PictureAdded_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_PictureAdded_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_PictureRemoved_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_PictureRemoved_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -2814,8 +4122,11 @@ public final class AlbumModels {
       "cription\030\004 \001(\t\022\014\n\004date\030\005 \002(\003\022\020\n\010pictures" +
       "\030\006 \003(\t\"%\n\014AlbumCreated\022\025\n\005album\030\001 \002(\0132\006." +
       "Album\"%\n\014AlbumUpdated\022\025\n\005album\030\001 \002(\0132\006.A" +
-      "lbum\"\032\n\014AlbumDeleted\022\n\n\002id\030\001 \002(\tB)\n%com." +
-      "adelegue.mypictures.domains.albumH\001"
+      "lbum\"\032\n\014AlbumDeleted\022\n\n\002id\030\001 \002(\t\"2\n\014Pict" +
+      "ureAdded\022\017\n\007albumId\030\001 \002(\t\022\021\n\tpictureId\030\002" +
+      " \002(\t\"4\n\016PictureRemoved\022\017\n\007albumId\030\001 \002(\t\022" +
+      "\021\n\tpictureId\030\002 \002(\tB)\n%com.adelegue.mypic" +
+      "tures.domains.albumH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2853,6 +4164,18 @@ public final class AlbumModels {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_AlbumDeleted_descriptor,
         new java.lang.String[] { "Id", });
+    internal_static_PictureAdded_descriptor =
+      getDescriptor().getMessageTypes().get(4);
+    internal_static_PictureAdded_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_PictureAdded_descriptor,
+        new java.lang.String[] { "AlbumId", "PictureId", });
+    internal_static_PictureRemoved_descriptor =
+      getDescriptor().getMessageTypes().get(5);
+    internal_static_PictureRemoved_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_PictureRemoved_descriptor,
+        new java.lang.String[] { "AlbumId", "PictureId", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

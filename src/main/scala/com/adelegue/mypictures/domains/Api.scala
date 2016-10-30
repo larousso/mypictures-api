@@ -52,10 +52,24 @@ object Api {
       JString(n.sessionType)
   }))
 
-  def apply(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DSL ~> Future, pict: Pictures.DSL ~> Future, comm: Comments.DSL ~> Future)(implicit system: ActorSystem, materializer: Materializer): Api = new Api(config, acc, alb, img, pict, comm)(system, materializer)
+  def apply(
+             config: Config,
+             accounts: Accounts,
+             albums: Albums,
+             images: Images,
+             pictures: Pictures,
+             comments: Comments)(implicit system: ActorSystem, materializer: Materializer): Api =
+    new Api(config, accounts, albums, images, pictures, comments)(system, materializer)
 }
 
-class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, img: Images.DSL ~> Future, pict: Pictures.DSL ~> Future, comm: Comments.DSL ~> Future)(implicit system: ActorSystem, materializer: Materializer) {
+class Api(
+           config: Config,
+           accounts: Accounts,
+           albums: Albums,
+           images: Images,
+           pictures: Pictures,
+           comments: Comments)
+         (implicit system: ActorSystem, materializer: Materializer) {
 
 
   import system.dispatcher
@@ -63,27 +77,19 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
   implicit val formats = new DefaultFormats { override def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") } + new RoleSerializer + new RotationSerializer
 
 
-  val accountInterpreter = acc
-  val albumInterpreter = alb :&: accountInterpreter
-  val pictureInterpreter = pict :&: img :&: albumInterpreter
-  val commentInterpreter = comm :&: pictureInterpreter
-
-
   private val users = config.getConfigList("users").toList
   users.foreach( userConfig => {
-    (for {
-      _ <- Accounts.createOrUpdateAccount(Accounts.Account(userConfig.getString("username"), userConfig.getString("password"), userConfig.getString("name"), userConfig.getString("surname"), Role.fromString(userConfig.getString("role"))))
-    } yield ()).interpret(Interpreter(accountInterpreter))
+    accounts.createOrUpdateAccount(Accounts.Account(userConfig.getString("username"), userConfig.getString("password"), userConfig.getString("name"), userConfig.getString("surname"), Role.fromString(userConfig.getString("role"))))
   })
 
-  val auth = Auth(config, acc)
+  val auth = Auth(config, accounts)
 
   val corsSettings = CorsSettings.defaultSettings.copy(allowedMethods = immutable.Seq(GET, POST, HEAD, OPTIONS, PUT, DELETE))
 
-  val accountApi = Accounts.Api(accountInterpreter)
-  val albumApi = Albums.Api(auth, albumInterpreter, pictureInterpreter)
-  val pictureApi = Pictures.Api(auth, pictureInterpreter)
-  val commentApi = Comments.Api(commentInterpreter)
+  val accountApi = Accounts.Api(accounts)
+  val albumApi = Albums.Api(auth, albums, pictures)
+  val pictureApi = Pictures.Api(auth, pictures)
+  val commentApi = Comments.Api(comments)
 
   def route() : Route = {
     cors(corsSettings) {
@@ -106,7 +112,7 @@ class Api(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future
                   } ~
                     path("[a-z0-9\\-]+".r) { pictureId: Pictures.Id =>
                       get {
-                        onSuccess(Pictures.getPicture(pictureId).interpret(pictureInterpreter)) {
+                        onSuccess(pictures.getPicture(pictureId)) {
                           case Some(p) => complete(p)
                           case None => complete(StatusCodes.NotFound)
                         }

@@ -1,17 +1,16 @@
 package com.adelegue.mypictures.domains.picture
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server._
+import akka.persistence.{PersistentActor, SnapshotOffer}
 import akka.stream.Materializer
-import akka.util.ByteString
-import cats.free.Free
-import com.adelegue.mypictures.domains.Auth
+import akka.util.{ByteString, Timeout}
+import com.adelegue.mypictures.domains.{Auth, Persist}
 import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
 import com.adelegue.mypictures.domains.account.Accounts.Role.Admin
 import com.adelegue.mypictures.domains.album.Albums
 import com.adelegue.mypictures.domains.picture.Images.Rotation
-import com.adelegue.mypictures.validation.Validation._
-import freek._
+import com.adelegue.mypictures.domains.picture.Pictures._
 import org.json4s.{Formats, Serialization}
 
 import scala.concurrent.Future
@@ -28,16 +27,15 @@ object Pictures {
 
   }
 
-  case class Api(auth: Auth, interpreter: Interpreter[PRG.Cop, Future])(implicit system: ActorSystem, materializer: Materializer, serialization: Serialization, formats: Formats) {
-    import cats.std.future._
-    import system.dispatcher
+  case class Api(auth: Auth, pictures: Pictures)(implicit system: ActorSystem, materializer: Materializer, serialization: Serialization, formats: Formats) {
     import akka.http.scaladsl.model._
     import akka.http.scaladsl.server.Directives._
     import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+    import system.dispatcher
 
     def readPicture(pictureId: Pictures.Id): Route =
       get {
-        onSuccess(Pictures.getPicture(pictureId).interpret(interpreter)) {
+        onSuccess(pictures.getPicture(pictureId)) {
           case Some(p) => complete(p)
           case None => complete(StatusCodes.NotFound)
         }
@@ -45,7 +43,7 @@ object Pictures {
 
     def readPictures(albumId: Albums.Id): Route =
       get {
-        onSuccess(Pictures.getPictureByAlbum(albumId).interpret(interpreter)) { pictures =>
+        onSuccess(pictures.getPictureByAlbum(albumId)) { pictures =>
           complete(StatusCodes.OK -> pictures)
         }
       }
@@ -54,7 +52,7 @@ object Pictures {
       auth.isAuthenticated {
         pathPrefix("images") {
           path("[a-z0-9\\-]+".r) { pictureId =>
-            onSuccess(Pictures.readImage(pictureId).interpret(interpreter)) {
+            onSuccess(pictures.readImage(pictureId)) {
               case Some(byteArray) =>
                 complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
               case None =>
@@ -67,7 +65,7 @@ object Pictures {
     def readThumbnails(): Route =
       pathPrefix("thumbnails") {
         path("[a-z0-9\\-]+".r) { pictureId =>
-          onSuccess(Pictures.readThumbnail(pictureId).interpret(interpreter)) {
+          onSuccess(pictures.readThumbnail(pictureId)) {
             case Some(byteArray) =>
               complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`image/jpeg`), byteArray)))
             case None =>
@@ -96,7 +94,7 @@ object Pictures {
                           .runFold(ByteString.empty)(_ ++ _)
                           .map(_.toArray[Byte])
                           .flatMap { fileContent =>
-                            Pictures.createPicture(picture, fileContent).interpret(interpreter)
+                            pictures.createPicture(picture, fileContent)
                           }) {
                           case Success(p) => complete(StatusCodes.Created -> p.picture)
                           case Failure(e) => complete(StatusCodes.BadRequest -> e)
@@ -107,14 +105,14 @@ object Pictures {
               } ~ readPicture(pictureId) ~
                 put {
                   entity(as[Pictures.Picture]) { picture =>
-                    onSuccess(Pictures.updatePicture(picture).interpret(interpreter)) {
+                    onSuccess(pictures.updatePicture(picture)) {
                       case Success(p) => complete(StatusCodes.OK -> p.picture)
                       case Failure(e) => complete(StatusCodes.BadRequest -> e)
                     }
                   }
                 } ~
                 delete {
-                  onSuccess(Pictures.deletePicture(albumId, pictureId).interpret(interpreter)) { _ =>
+                  onSuccess(pictures.deletePicture(albumId, pictureId)) { _ =>
                     complete(StatusCodes.NoContent)
                   }
                 }
@@ -122,7 +120,7 @@ object Pictures {
               path("_rotation") {
                 post {
                   entity(as[Api.RotationAction]) { action =>
-                    onSuccess(Pictures.rotatePicture(pictureId, action.rotation).interpret(interpreter)) {
+                    onSuccess(pictures.rotatePicture(pictureId, action.rotation)) {
                       case Some(p) => complete(StatusCodes.OK -> p)
                       case None => complete(StatusCodes.NotFound -> pictureId)
                     }
@@ -135,131 +133,6 @@ object Pictures {
     }
   }
 
-  type PRG = Pictures.DSL :|: Images.DSL :|: Albums.PRG
-  val PRG = Program[PRG]
-  
-  def createPicture(picture: Picture, content: Array[Byte]): Free[PRG.Cop, Result[PictureCreated]] =
-    for {
-      ok <- validatePictureCreation(picture)
-      created <- ok.fold(
-        e => Free.pure[PRG.Cop, Result[PictureCreated]](Failure(e)),
-        p => for {
-          _ <- Images.createImage(picture.id, content).expand[PRG]
-          _ <- Images.createThumbnail(picture.id, content).expand[PRG]
-          _ <- Albums.addPicture(picture.album, picture.id).expand[PRG]
-          created <- CreatePicture(picture).freek[PRG]
-        } yield created
-      )
-    } yield created
-
-
-  def updatePicture(picture: Picture): Free[PRG.Cop, Result[PictureUpdated]] =
-    for {
-      updated <- UpdatePicture(picture).freek[PRG]
-    } yield updated
-
-  def rotatePicture(id: Id, rotation: Rotation): Free[PRG.Cop, Option[Picture]] = {
-    for {
-      p <- getPicture(id)
-      _ <- p match {
-        case Some(_) =>
-          for {
-            _ <- Images.rotateImage(id, rotation).expand[PRG]
-            _ <- Images.rotateThumbnail(id, rotation).expand[PRG]
-          } yield Unit
-        case None => Free.pure[PRG.Cop, Unit](Unit)
-      }
-    } yield p
-  }
-
-  def deletePicturesByAlbum(albumId: Albums.Id): Free[PRG.Cop, List[Result[PictureDeleted]]] = {
-      import cats.implicits._
-      for {
-        pictures <- getPictureByAlbum(albumId)
-        deletes <- pictures.traverseU { p => deletePicture(albumId, p.id) }
-      } yield deletes
-  }
-
-  def deletePicture(albumId: Albums.Id, id: Pictures.Id): Free[PRG.Cop, Result[PictureDeleted]] =
-    for {
-      _ <- Images.deleteImage(id).expand[PRG]
-      _ <- Images.deleteThumbnail(id).expand[PRG]
-      _ <- Albums.removePicture(albumId, id).expand[PRG]
-      delete <- DeletePicture(id).freek[PRG]
-    } yield delete
-
-  def getPicture(id: Pictures.Id): Free[PRG.Cop, Option[Picture]] =
-    for {
-      picture <- GetPicture(id).freek[PRG]
-    } yield picture
-
-  def getPictureByAlbum(albumId: Albums.Id): Free[PRG.Cop, List[Picture]] = {
-    for {
-      pictures <- GetPictureByAlbum(albumId).freek[PRG]
-    } yield pictures
-  }
-
-  def getThumbnailsByAlbum(albumId: Albums.Id): Free[PRG.Cop, List[Picture]] = {
-    for {
-      pictures <- GetPictureByAlbum(albumId).freek[PRG]
-    } yield pictures
-  }
-
-  def listAll(): Free[PRG.Cop, List[Picture]] = {
-    for {
-      pictures <- ListPictures.freek[PRG]
-    } yield pictures
-  }
-
-  def readImage(id: Pictures.Id): Free[PRG.Cop, Option[Array[Byte]]] =
-    for {
-      img <- Images.readImage(id).expand[PRG]
-    } yield img.map(_.content)
-
-  def readThumbnail(id: Pictures.Id): Free[PRG.Cop, Option[Array[Byte]]] =
-    for {
-      img <- Images.readThumbnail(id).expand[PRG]
-    } yield img.map(_.content)
-
-  def validatePictureCreation(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
-    import scalaz.Scalaz._
-    for {
-      albumExists <- validateAlbumExists(picture)
-      pictureDoesntExist <- validatePictureDoesntExists(picture)
-    } yield (albumExists |@| pictureDoesntExist) { (_, _) => picture}
-  }
-
-  def validateAlbumExists(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
-    import scalaz.Scalaz._
-    for {
-      album <- Albums.getAlbum(picture.album).expand[PRG]
-    } yield album match {
-      case Some(a) => picture.successNel
-      case None => Error("L'album n'existe pas").failureNel
-    }
-  }
-
-  def validatePictureExists(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
-    import scalaz.Scalaz._
-    for {
-      pict <- GetPicture(picture.id).freek[PRG]
-    } yield pict match {
-      case Some(e) => picture.successNel
-      case None => Error("L'image n'existe pas").failureNel
-    }
-  }
-
-  def validatePictureDoesntExists(picture: Picture): Free[PRG.Cop, Result[Picture]] = {
-    import scalaz.Scalaz._
-    for {
-      pict <- GetPicture(picture.id).freek[PRG]
-    } yield pict match {
-      case Some(e) => Error("L'image existe déjà").failureNel
-      case None => picture.successNel
-    }
-  }
-
-
   case class Picture(id: Pictures.Id, filename: Filename, `type`: Type, album: Albums.Id, preview: Boolean = false, title: Option[Title] = None, description: Option[String] = None)
 
   type Id = String
@@ -267,16 +140,13 @@ object Pictures {
   type Filename = String
   type Type = String
 
-
-  sealed trait DSL[A]
-
   sealed trait PictureCommand extends Cmd
 
-  case class CreatePicture(picture: Picture) extends PictureCommand with DSL[Result[PictureCreated]]
+  case class CreatePicture(picture: Picture) extends PictureCommand
 
-  case class UpdatePicture(picture: Picture) extends PictureCommand with DSL[Result[PictureUpdated]]
+  case class UpdatePicture(picture: Picture) extends PictureCommand
 
-  case class DeletePicture(id: Pictures.Id) extends PictureCommand with DSL[Result[PictureDeleted]]
+  case class DeletePicture(id: Pictures.Id) extends PictureCommand
 
   sealed trait PictureEvent extends Evt
 
@@ -288,10 +158,198 @@ object Pictures {
 
   sealed trait PictureQuery extends Query
 
-  case class GetPicture(id: Pictures.Id) extends PictureQuery with DSL[Option[Picture]]
+  case class GetPicture(id: Pictures.Id) extends PictureQuery
 
-  case class GetPictureByAlbum(albumId: Albums.Id) extends PictureQuery with DSL[List[Picture]]
+  case class GetPictureByAlbum(albumId: Albums.Id) extends PictureQuery
 
-  case object ListPictures extends PictureQuery with DSL[List[Picture]]
+  case object ListPictures extends PictureQuery
 
+}
+
+
+class Pictures(albums: Albums, images: Images)(implicit val system: ActorSystem) {
+
+  import system.dispatcher
+  import akka.pattern.ask
+  import com.adelegue.mypictures.validation.Validation._
+
+  import scala.concurrent.duration.DurationDouble
+  implicit val timeout = Timeout(5.second)
+
+  val ref = system.actorOf(PictureStoreActor.props, "Pictures")
+
+  def createPicture(picture: Picture, content: Array[Byte]): Future[Result[PictureCreated]] =
+    for {
+      ok <- validatePictureCreation(picture)
+      created <- ok.fold(
+        e => Future.successful(Failure(e)),
+        p => for {
+          _ <- images.createImage(picture.id, content)
+          _ <- images.createThumbnail(picture.id, content)
+          _ <- albums.addPicture(picture.album, picture.id)
+          created <- (ref ? CreatePicture(picture)).mapTo[Result[PictureCreated]]
+        } yield created
+      )
+    } yield created
+
+
+  def updatePicture(picture: Picture): Future[Result[PictureUpdated]] =
+    (ref ? UpdatePicture(picture)).mapTo[Result[PictureUpdated]]
+
+  def rotatePicture(id: Pictures.Id, rotation: Rotation): Future[Option[Picture]] = {
+    for {
+      p <- getPicture(id)
+      _ <- p match {
+        case Some(_) =>
+          for {
+            _ <- images.rotateImage(id, rotation)
+            _ <- images.rotateThumbnail(id, rotation)
+          } yield Unit
+        case None => Future.successful(Unit)
+      }
+    } yield p
+  }
+
+  def deletePicturesByAlbum(albumId: Albums.Id): Future[List[Result[PictureDeleted]]] = {
+    import cats.implicits._
+    for {
+      pictures <- getPictureByAlbum(albumId)
+      deletes <- pictures.traverseU { p => deletePicture(albumId, p.id) }
+    } yield deletes
+  }
+
+  def deletePicture(albumId: Albums.Id, id: Pictures.Id): Future[Result[PictureDeleted]] =
+    for {
+      _ <- images.deleteImage(id)
+      _ <- images.deleteThumbnail(id)
+      _ <- albums.removePicture(albumId, id)
+      delete <- (ref ? DeletePicture(id)).mapTo[Result[PictureDeleted]]
+    } yield delete
+
+  def getPicture(id: Pictures.Id): Future[Option[Picture]] =
+    (ref ? GetPicture(id)).mapTo[Option[Picture]]
+
+  def getPictureByAlbum(albumId: Albums.Id): Future[List[Picture]] =
+    (ref ? GetPictureByAlbum(albumId)).mapTo[List[Picture]]
+
+
+  def getThumbnailsByAlbum(albumId: Albums.Id): Future[List[Picture]] =
+    (ref ? GetPictureByAlbum(albumId)).mapTo[List[Picture]]
+
+
+  def listAll(): Future[List[Picture]] =
+    (ref ? ListPictures).mapTo[List[Picture]]
+
+
+  def readImage(id: Pictures.Id): Future[Option[Array[Byte]]] =
+    for {
+      img <- images.readImage(id)
+    } yield img.map(_.content)
+
+  def readThumbnail(id: Pictures.Id): Future[Option[Array[Byte]]] =
+    for {
+      img <- images.readThumbnail(id)
+    } yield img.map(_.content)
+
+  def validatePictureCreation(picture: Picture): Future[Result[Picture]] = {
+    import scalaz.Scalaz._
+    for {
+      albumExists <- validateAlbumExists(picture)
+      pictureDoesntExist <- validatePictureDoesntExists(picture)
+    } yield (albumExists |@| pictureDoesntExist) { (_, _) => picture}
+  }
+
+  def validateAlbumExists(picture: Picture): Future[Result[Picture]] = {
+    import scalaz.Scalaz._
+    for {
+      album <- albums.getAlbum(picture.album)
+    } yield album match {
+      case Some(a) => picture.successNel
+      case None => Error("L'album n'existe pas").failureNel
+    }
+  }
+
+  def validatePictureExists(picture: Picture): Future[Result[Picture]] = {
+    import scalaz.Scalaz._
+    for {
+      pict <- getPicture(picture.id)
+    } yield pict match {
+      case Some(e) => picture.successNel
+      case None => Error("L'image n'existe pas").failureNel
+    }
+  }
+
+  def validatePictureDoesntExists(picture: Picture): Future[Result[Picture]] = {
+    import scalaz.Scalaz._
+    for {
+      pict <- getPicture(picture.id)
+    } yield pict match {
+      case Some(e) => Error("L'image existe déjà").failureNel
+      case None => picture.successNel
+    }
+  }
+}
+
+
+
+object PictureStoreActor {
+  def props = Props(classOf[PictureStoreActor])
+}
+
+class PictureStoreActor extends PersistentActor {
+  import scalaz.Scalaz._
+
+  override def persistenceId: String = "pictures"
+
+  var state = PictureState()
+
+  def numEvents = state.size
+
+  def updateState[E <: PictureEvent](event: E) = {
+    state = state.updated(event)
+  }
+
+  val receiveRecover: Receive = {
+    case evt: PictureEvent => updateState(evt)
+    case SnapshotOffer(_, snapshot: PictureState) => state = snapshot
+  }
+
+  val receiveCommand: Receive = {
+    case CreatePicture(picture) =>
+      self forward  Persist(PictureCreated(picture))
+    case UpdatePicture(picture) =>
+      self forward  Persist(PictureUpdated(picture))
+    case DeletePicture(id) =>
+      self forward  Persist(PictureDeleted(id))
+    case Persist(pictureEvent: PictureEvent) =>
+      persist(pictureEvent) { event =>
+        updateState(event)
+        context.system.eventStream.publish(event)
+        sender() ! event.successNel
+      }
+    case ListPictures =>
+      sender ! state.pictures.values.toList
+    case GetPicture(id) =>
+      sender ! state.pictures.get(id)
+    case GetPictureByAlbum(id) =>
+      sender ! state.pictures.values.toList.filter(p => p.album == id)
+    case "snap" => saveSnapshot(state)
+    case "print" => println(state)
+  }
+}
+
+case class PictureState(pictures: Map[Pictures.Id, Picture] = Map.empty) {
+  def updated(evt: PictureEvent): PictureState = evt match {
+    case PictureCreated(picture) =>
+      PictureState(pictures + (picture.id -> picture))
+    case PictureUpdated(picture) =>
+      PictureState(pictures + (picture.id -> picture))
+    case PictureDeleted(id) =>
+      PictureState(pictures.filterKeys(_ != id))
+    case _ => this
+  }
+
+  def size: Int = pictures.size
+
+  override def toString: String = pictures.toString
 }

@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import cats._
 import com.adelegue.mypictures.domains.account.Accounts
 import com.adelegue.mypictures.domains.account.Accounts.Role.Guest
-import com.adelegue.mypictures.domains.account.Accounts.{DSL, Role, RoleSerializer}
+import com.adelegue.mypictures.domains.account.Accounts.{Role, RoleSerializer}
 import com.adelegue.mypictures.validation.Validation
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
@@ -23,10 +23,10 @@ import scala.concurrent.Future
   */
 
 object Auth {
-  def apply(config: Config, accountInterpreter: DSL ~> Future)(implicit system: ActorSystem, materializer: Materializer) = new Auth(config, accountInterpreter)(system, materializer)
+  def apply(config: Config, accounts: Accounts)(implicit system: ActorSystem, materializer: Materializer) = new Auth(config, accounts)(system, materializer)
 }
 
-class Auth(config: Config, accountInterpreter: Accounts.DSL ~> Future)(implicit system: ActorSystem, materializer: Materializer) {
+class Auth(config: Config, accounts: Accounts)(implicit system: ActorSystem, materializer: Materializer) {
 
   import Api._
   import cats.std.future._
@@ -115,7 +115,7 @@ class Auth(config: Config, accountInterpreter: Accounts.DSL ~> Future)(implicit 
             username <- login.username
             password <- login.password
           } yield {
-            onSuccess(Accounts.getAccountByUsername(username).interpret(Interpreter(accountInterpreter))) {
+            onSuccess(accounts.getAccountByUsername(username)) {
               case Some(a) if password == a.password =>
                 val session = Session(user = Some(SessionUser(a.username, a.role, Custom)))
                 setSession(oneOff, usingCookies, session) {

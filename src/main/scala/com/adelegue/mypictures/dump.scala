@@ -18,22 +18,17 @@ import com.adelegue.mypictures.domains.picture._
 import akka.http.scaladsl.unmarshalling._
 import java.util.Base64
 
-import cats._
 import com.typesafe.config.Config
-import freek._
 
 object Dump {
 
-  def run(config: Config, acc: Accounts.DSL ~> Future, alb: Albums.DSL ~> Future, pict: Pictures.DSL ~> Future, img: Images.DSL ~> Future)(implicit system: ActorSystem) = {
+  def run(config: Config, accounts: Accounts, albums: Albums, pictures: Pictures, images: Images)(implicit system: ActorSystem) = {
 
     import cats.std.future._
     import system.dispatcher
     implicit val materializer = ActorMaterializer(ActorMaterializerSettings(system))
     val d = new Dump()
 
-    val accountInterpreter = acc
-    val albumInterpreter = alb :&: accountInterpreter
-    val pictureInterpreter = pict :&: img :&: albumInterpreter
 
     val username = config.getString("admin.username")
     val password = config.getString("admin.password")
@@ -46,7 +41,7 @@ object Dump {
             .mapConcat(identity _)
             .mapAsyncUnordered(4){alb =>
               Logger.logger.info("Saving album {}", alb)
-              Albums.createAlbum(alb).interpret(albumInterpreter)
+              albums.createAlbum(alb)
             }
             .mapAsyncUnordered(4) {
               case scalaz.Success(created) =>
@@ -60,7 +55,7 @@ object Dump {
             .mapAsyncUnordered(4) {
               case (Some(file), picture) =>
                 Logger.logger.info(s"Saving picture {}", picture)
-                Pictures.createPicture(picture, file).interpret(pictureInterpreter)
+                pictures.createPicture(picture, file)
               case _ =>
                 Future.failed(new RuntimeException("Fuck"))
             }

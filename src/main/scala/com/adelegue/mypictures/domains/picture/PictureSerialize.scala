@@ -3,6 +3,7 @@ package com.adelegue.mypictures.domains.picture
 import java.nio.charset.Charset
 
 import akka.serialization.SerializerWithStringManifest
+import com.adelegue.mypictures.domains.album.Albums.PictureAdded
 import org.slf4j.LoggerFactory
 
 

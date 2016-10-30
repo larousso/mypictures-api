@@ -19,3 +19,13 @@ message AlbumUpdated {
 message AlbumDeleted {
     required string id = 1;
 }
+
+message PictureAdded {
+    required string albumId = 1;
+    required string pictureId = 2;
+}
+
+message PictureRemoved {
+    required string albumId = 1;
+    required string pictureId = 2;
+}

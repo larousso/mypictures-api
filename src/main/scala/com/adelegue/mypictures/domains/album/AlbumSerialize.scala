@@ -2,12 +2,13 @@ package com.adelegue.mypictures.domains.album
 
 import java.nio.charset.Charset
 import java.util.Date
+
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
-
 import akka.serialization.SerializerWithStringManifest
 import Albums._
 import com.adelegue.mypictures.domains.picture.Pictures
+
 /**
   * Created by adelegue on 25/05/2016.
   */
@@ -18,6 +19,8 @@ class AlbumSerialize extends SerializerWithStringManifest {
   val AlbumCreatedManifest = classOf[AlbumCreated].getName
   val AlbumUpdatedManifest = classOf[AlbumUpdated].getName
   val AlbumDeletedManifest = classOf[AlbumDeleted].getName
+  val PictureAddedManifest = classOf[PictureAdded].getName
+  val PictureRemovedManifest = classOf[PictureRemoved].getName
 
   def identifier = 2
 
@@ -30,6 +33,10 @@ class AlbumSerialize extends SerializerWithStringManifest {
       albumUpdated(AlbumModels.AlbumUpdated.parseFrom(bytes))
     case AlbumDeletedManifest =>
       albumDeleted(AlbumModels.AlbumDeleted.parseFrom(bytes))
+    case PictureAddedManifest =>
+      pictureAdded(AlbumModels.PictureAdded.parseFrom(bytes))
+    case PictureRemovedManifest =>
+      pictureRemoved(AlbumModels.PictureRemoved.parseFrom(bytes))
     case _ =>
       throw new IllegalArgumentException("Unable to handle manifest: " + manifest)
   }
@@ -44,6 +51,16 @@ class AlbumSerialize extends SerializerWithStringManifest {
     case AlbumDeleted(id) =>
       AlbumModels.AlbumDeleted.newBuilder
         .setId(id)
+        .build().toByteArray
+    case PictureAdded(albumId, pictureId) =>
+      AlbumModels.PictureAdded.newBuilder()
+        .setAlbumId(albumId)
+        .setPictureId(pictureId)
+        .build().toByteArray
+    case PictureRemoved(albumId, pictureId) =>
+      AlbumModels.PictureRemoved.newBuilder()
+        .setAlbumId(albumId)
+        .setPictureId(pictureId)
         .build().toByteArray
   }
 
@@ -68,5 +85,8 @@ class AlbumSerialize extends SerializerWithStringManifest {
   private def album(p: AlbumModels.Album) = Album(p.getId, p.getUsername, p.getTitle, Option(p.getDescription), new Date(p.getDate), getPictures(p))
 
   private def getPictures(p: AlbumModels.Album): List[Pictures.Id] = Option(p.getPicturesList).map(_.iterator().asScala.toList).getOrElse(List.empty[Pictures.Id])
+
+  private def pictureAdded(p: AlbumModels.PictureAdded) = PictureAdded(p.getAlbumId, p.getPictureId)
+  private def pictureRemoved(p: AlbumModels.PictureRemoved) = PictureRemoved(p.getAlbumId, p.getPictureId)
 
 }

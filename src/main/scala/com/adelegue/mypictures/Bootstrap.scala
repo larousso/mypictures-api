@@ -8,14 +8,13 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{MalformedRequestContentRejection, RejectionHandler, ValidationRejection}
 import akka.stream.ActorMaterializer
 import com.adelegue.mypictures.domains.Api
-import com.adelegue.mypictures.domains.account.impl.AccountInterpreter
-import com.adelegue.mypictures.domains.album.impl.AlbumInterpreter
-import com.adelegue.mypictures.domains.comment.impl.CommentInterpreter
-import com.adelegue.mypictures.domains.picture.impl.{ImagesInterpreter, PicturesInterpreter}
+import com.adelegue.mypictures.domains.account.Accounts
+import com.adelegue.mypictures.domains.album.Albums
+import com.adelegue.mypictures.domains.comment.Comments
+import com.adelegue.mypictures.domains.picture.{Images, Pictures}
 import com.adelegue.mypictures.validation.Validation
 import com.typesafe.config.ConfigFactory
 import org.json4s.{DefaultFormats, jackson}
-import org.slf4j.LoggerFactory
 
 /**
   * Created by adelegue on 23/05/2016.
@@ -53,7 +52,13 @@ object Bootstrap extends App {
   val port = config.getInt("app.port")
   val host = config.getString("app.host")
 
-  val api = Api(config, AccountInterpreter(system), AlbumInterpreter(system), ImagesInterpreter(config.getString("app.images.path")), PicturesInterpreter(system), CommentInterpreter(system))
+  private val accounts: Accounts = new Accounts()
+  private val albums: Albums = new Albums(accounts)
+  private val images: Images = new Images(config.getString("app.images.path"))
+  private val pictures: Pictures = new Pictures(albums, images)
+  private val comments: Comments = new Comments(pictures)
+
+  val api = Api(config, accounts, albums, images, pictures, comments)
   val bindingFuture = Http().bindAndHandle(api.route, host, port)
 
   Logger.logger.info(s"Server online at http://{}:{}", host, port)

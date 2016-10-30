@@ -2,20 +2,20 @@ package com.adelegue.mypictures.domains.album
 
 import java.util.{Date, UUID}
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server._
-import cats.free.Free
-import com.adelegue.mypictures.domains.Auth
+import akka.persistence.{PersistentActor, SnapshotOffer}
+import akka.util.Timeout
+import com.adelegue.mypictures.domains.{Auth, Persist}
 import com.adelegue.mypictures.domains.Messages.{Cmd, Evt, Query}
 import com.adelegue.mypictures.domains.account.Accounts
-import com.adelegue.mypictures.domains.account.Accounts.Role.Admin
-import com.adelegue.mypictures.domains.account.Accounts.Username
+import com.adelegue.mypictures.domains.album.Albums._
 import com.adelegue.mypictures.domains.picture.Pictures
 import com.adelegue.mypictures.validation.Validation._
-import freek._
 import org.json4s.{Formats, Serialization}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scalaz.Scalaz._
 import scalaz.{Failure, Success}
 
 /**
@@ -32,16 +32,15 @@ object Albums {
   }
 
 
-  case class Api(auth: Auth, interpreter: Interpreter[PRG.Cop, Future], pictureInterpreter: Interpreter[Pictures.PRG.Cop, Future])(implicit system: ActorSystem, serialization: Serialization, formats: Formats) {
+  case class Api(auth: Auth, albums: Albums, pictures: Pictures)(implicit system: ActorSystem, serialization: Serialization, formats: Formats) {
 
-    import cats.std.future._
     import system.dispatcher
     import akka.http.scaladsl.model._
     import akka.http.scaladsl.server.Directives._
     import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
     def readAlbum(albumId: Albums.Id): Route = get {
-      onSuccess(Albums.getAlbum(albumId).interpret(interpreter)) {
+      onSuccess(albums.getAlbum(albumId)) {
         case Some(a) => complete(a)
         case None => complete(StatusCodes.NotFound)
       }
@@ -52,15 +51,15 @@ object Albums {
         pathPrefix("albums") {
           pathEnd {
             get {
-              onSuccess(Albums.getAlbumByUsername(username).interpret(interpreter)) { albums =>
+              onSuccess(albums.getAlbumByUsername(username)) { albums =>
                 complete(albums)
               }
             } ~
               post {
-                auth.hashRole(Admin) {
+                auth.hashRole(Accounts.Role.Admin) {
                   entity(as[Api.Album]) {
                     case Api.Album(title, description, date, pictureIds) =>
-                      onSuccess(Albums.createAlbum(Albums.Album(UUID.randomUUID.toString, username, title, description, date, pictureIds)).interpret(interpreter)) {
+                      onSuccess(albums.createAlbum(Albums.Album(UUID.randomUUID.toString, username, title, description, date, pictureIds))) {
                         case Success(a) => complete(StatusCodes.Created -> a.album)
                         case Failure(e) => complete(StatusCodes.BadRequest -> e)
                       }
@@ -72,13 +71,13 @@ object Albums {
               pathEnd {
                 readAlbum(albumId) ~
                   delete {
-                    auth.hashRole(Admin) {
+                    auth.hashRole(Accounts.Role.Admin) {
                       val res = for {
-                        _ <- Pictures.deletePicturesByAlbum(albumId)
-                        delete <- Albums.deleteAlbum(albumId).expand[Pictures.PRG]
+                        _ <- pictures.deletePicturesByAlbum(albumId)
+                        delete <- albums.deleteAlbum(albumId)
                       } yield delete
 
-                      onSuccess(res.interpret(pictureInterpreter)) {
+                      onSuccess(res) {
                         case Success(a) =>
                           complete(StatusCodes.OK -> a)
                         case Failure(e) =>
@@ -87,9 +86,9 @@ object Albums {
                     }
                   } ~
                   put {
-                    auth.hashRole(Admin) {
+                    auth.hashRole(Accounts.Role.Admin) {
                       entity(as[Albums.Album]) { album =>
-                        onSuccess(Albums.updateAlbum(album).interpret(interpreter)) {
+                        onSuccess(albums.updateAlbum(album)) {
                           case Success(a) =>
                             complete(StatusCodes.OK -> a.album)
                           case Failure(e) =>
@@ -105,127 +104,201 @@ object Albums {
       }
     }
 
-
-  type PRG = Albums.DSL :|: Accounts.PRG
-  val PRG = Program[PRG]
-
-  def createAlbum(album: Album): Free[PRG.Cop, Result[AlbumCreated]] =
-    for {
-      validatedAlbum <- Validation.validateAlbumCreation(album)
-      command <- validatedAlbum.fold(
-        e => Free.pure[PRG.Cop, Result[AlbumCreated]](Failure(e)),
-        s => CreateAlbum(album).freek[PRG]
-      )
-    } yield command
-
-  def updateAlbum(album: Album): Free[PRG.Cop, Result[AlbumUpdated]] =
-    for {
-      validatedAlbum <- Validation.validateAlbumUpdate(album)
-      command <- validatedAlbum.fold(
-        e => Free.pure[PRG.Cop, Result[AlbumUpdated]](Failure(e)),
-        s => UpdateAlbum(album).freek[PRG]
-      )
-    } yield command
-
-  def addPicture(albumId: Albums.Id, pictureId: Pictures.Id): Free[PRG.Cop, PictureAdded] =
-    for {
-      e <- AddPicture(albumId, pictureId).freek[PRG]
-    } yield e
-
-  def removePicture(albumId: Albums.Id, pictureId: Pictures.Id): Free[PRG.Cop, PictureRemoved] =
-    for {
-      e <- RemovePicture(albumId, pictureId).freek[PRG]
-    } yield e
-
-  def deleteAlbum(id: Id): Free[PRG.Cop, Result[AlbumDeleted]] =
-    for {
-      delete <- DeleteAlbum(id).freek[PRG]
-    } yield delete
-
-  def getAlbum(id: Id): Free[PRG.Cop, Option[Album]] =
-    for {get <- GetAlbum(id).freek[PRG]} yield get
-
-  def getAlbumByUsername(username: Username): Free[PRG.Cop, List[Album]] =
-    for {get <- GetAlbumByUsername(username).freek[PRG]} yield get
-
-  def listAll: Free[PRG.Cop, List[Album]] = for {list <- ListAlbums.freek[PRG]} yield list
-
-  object Validation {
-
-    import com.adelegue.mypictures.validation.Validation._
-
-    import scalaz.Scalaz._
-
-    def validateAlbumCreation(album: Album): Free[PRG.Cop, Result[Album]] =
-      for {
-        username <- validateUsername(album)
-        alreadyExists <- validateNotExists(album)
-      } yield (username |@| alreadyExists) { (_, _) => album }
-
-
-    def validateAlbumUpdate(album: Album): Free[PRG.Cop, Result[Album]] =
-      for {
-        username <- validateUsername(album)
-        alreadyExists <- validateExists(album)
-      } yield (username |@| alreadyExists) { (_, _) => album }
-
-    def validateUsername(album: Album): Free[PRG.Cop, Result[Album]] =
-      Accounts.getAccountByUsername(album.username).expand[PRG].map {
-        case Some(a) => album.successNel
-        case None => Error(s"L'utilisateur ${album.username} n'existe pas").failureNel
-      }
-
-    def validateNotExists(album: Album): Free[PRG.Cop, Result[Album]] =
-      albumExists(album).map { exists => if (exists) Error("L'album existe déjà").failureNel else album.successNel }
-
-    def validateExists(album: Album): Free[PRG.Cop, Result[Album]] =
-      albumExists(album).map { exists => if (!exists) Error("L'album n'existe pas").failureNel else album.successNel }
-
-    def albumExists(album: Album): Free[PRG.Cop, Boolean] =
-      for {
-        mayBe <- Albums.getAlbum(album.id)
-      } yield mayBe.isDefined
-  }
-
-
   type Id = String
   type Title = String
   type Description = String
 
-  case class Album(id: Id, username: Username, title: Title, description: Option[Description], date: Date = new Date(), pictureIds: List[Pictures.Id] = List.empty[Pictures.Id])
-
-  sealed trait DSL[A]
+  case class Album(id: Id, username: Accounts.Username, title: Title, description: Option[Description], date: Date = new Date(), pictureIds: List[Pictures.Id] = List.empty[Pictures.Id])
 
   sealed trait AlbumCommand extends Cmd
-
-  case class CreateAlbum(album: Album) extends AlbumCommand with DSL[Result[AlbumCreated]]
-
-  case class UpdateAlbum(album: Album) extends AlbumCommand with DSL[Result[AlbumUpdated]]
-
-  case class DeleteAlbum(id: Id) extends AlbumCommand with DSL[Result[AlbumDeleted]]
-
-  case class AddPicture(id: Id, pictureId: Pictures.Id) extends AlbumCommand with DSL[PictureAdded]
-
-  case class RemovePicture(id: Id, pictureId: Pictures.Id) extends AlbumCommand with DSL[PictureRemoved]
+  case class CreateAlbum(album: Album) extends AlbumCommand
+  case class UpdateAlbum(album: Album) extends AlbumCommand
+  case class DeleteAlbum(id: Id) extends AlbumCommand
+  case class AddPicture(id: Id, pictureId: Pictures.Id) extends AlbumCommand
+  case class RemovePicture(id: Id, pictureId: Pictures.Id) extends AlbumCommand
 
   sealed trait AlbumEvent extends Evt
-
   case class AlbumCreated(album: Album) extends AlbumEvent
-
   case class AlbumUpdated(album: Album) extends AlbumEvent
-
   case class AlbumDeleted(id: Id) extends AlbumEvent
-
   case class PictureAdded(id: Id, pictureId: Pictures.Id) extends AlbumEvent
-
   case class PictureRemoved(id: Id, pictureId: Pictures.Id) extends AlbumEvent
 
   sealed trait AlbumQuery extends Query
+  case class GetAlbum(id: Id) extends AlbumQuery
+  case class GetAlbumByUsername(username: Accounts.Username) extends AlbumQuery
+  case object ListAlbums extends AlbumQuery
 
-  case class GetAlbum(id: Id) extends AlbumQuery with DSL[Option[Album]]
+}
 
-  case class GetAlbumByUsername(username: Username) extends AlbumQuery with DSL[List[Album]]
+class Albums(accounts: Accounts)(implicit val system: ActorSystem) {
 
-  case object ListAlbums extends AlbumQuery with DSL[List[Album]]
+  import Albums._
+  import system.dispatcher
+  import com.adelegue.mypictures.validation.Validation._
+  import scalaz.Scalaz._
+  import akka.pattern.ask
+  import scala.concurrent.duration.DurationDouble
+  implicit val timeout = Timeout(5.second)
 
+  val ref = system.actorOf(AlbumStoreActor.props, "Albums")
+
+  def createAlbum(album: Album): Future[Result[AlbumCreated]] =
+    for {
+      validatedAlbum <- validateAlbumCreation(album)
+      command <- validatedAlbum.fold(
+        e => Future.successful(Failure(e)),
+        s => (ref ? CreateAlbum(album)).mapTo[Result[AlbumCreated]]
+      )
+    } yield command
+
+  def updateAlbum(album: Album): Future[Result[AlbumUpdated]] =
+    for {
+      validatedAlbum <- validateAlbumUpdate(album)
+      command <- validatedAlbum.fold(
+        e => Future.successful(Failure(e)),
+        s => (ref ? UpdateAlbum(album)).mapTo[Result[AlbumUpdated]]
+      )
+    } yield command
+
+  def addPicture(albumId: Albums.Id, pictureId: Pictures.Id): Future[Result[PictureAdded]] =
+    (ref ? AddPicture(albumId, pictureId)).mapTo[Result[PictureAdded]]
+
+
+  def removePicture(albumId: Albums.Id, pictureId: Pictures.Id): Future[Result[PictureRemoved]] =
+    (ref ? RemovePicture(albumId, pictureId)).mapTo[Result[PictureRemoved]]
+
+
+  def deleteAlbum(id: Albums.Id): Future[Result[AlbumDeleted]] =
+    (ref ? DeleteAlbum(id)).mapTo[Result[AlbumDeleted]]
+
+  def getAlbum(id: Albums.Id): Future[Option[Album]] =
+    (ref ? GetAlbum(id)).mapTo[Option[Album]]
+
+  def getAlbumByUsername(username: Accounts.Username): Future[List[Album]] =
+    (ref ? GetAlbumByUsername(username)).mapTo[List[Album]]
+
+  def listAll: Future[List[Album]] =
+    (ref ? ListAlbums).mapTo[List[Album]]
+
+
+
+  def validateAlbumCreation(album: Album): Future[Result[Album]] =
+    for {
+      username <- validateUsername(album)
+      alreadyExists <- validateNotExists(album)
+    } yield (username |@| alreadyExists) { (_, _) => album }
+
+
+  def validateAlbumUpdate(album: Album): Future[Result[Album]] =
+    for {
+      username <- validateUsername(album)
+      alreadyExists <- validateExists(album)
+    } yield (username |@| alreadyExists) { (_, _) => album }
+
+  def validateUsername(album: Album): Future[Result[Album]] =
+    accounts.getAccountByUsername(album.username).map {
+      case Some(a) => album.successNel
+      case None => Error(s"L'utilisateur ${album.username} n'existe pas").failureNel
+    }
+
+  def validateNotExists(album: Album): Future[Result[Album]] =
+    albumExists(album).map { exists => if (exists) Error("L'album existe déjà").failureNel else album.successNel }
+
+  def validateExists(album: Album): Future[Result[Album]] =
+    albumExists(album).map { exists => if (!exists) Error("L'album n'existe pas").failureNel else album.successNel }
+
+  def albumExists(album: Album): Future[Boolean] =
+    for {
+      mayBe <- getAlbum(album.id)
+    } yield mayBe.isDefined
+}
+
+
+
+object AlbumStoreActor {
+  def props = Props(classOf[AlbumStoreActor])
+}
+
+class AlbumStoreActor extends PersistentActor {
+
+  import scalaz.Scalaz._
+  implicit val ec: ExecutionContext = context.system.dispatcher
+
+  override def persistenceId: String = "albums"
+
+  var state = AlbumState()
+
+  def numEvents = state.size
+
+  def updateState[E <: AlbumEvent](event: E) =
+    state = state.updated(event)
+
+  val receiveRecover: Receive = {
+    case evt: AlbumEvent => updateState(evt)
+    case SnapshotOffer(_, snapshot: AlbumState) => state = snapshot
+  }
+
+  val receiveCommand: Receive = {
+    //Command
+    case command: AlbumCommand =>
+      command match {
+        case CreateAlbum(album) =>
+          self forward Persist(AlbumCreated(album))
+        case UpdateAlbum(album) =>
+          self forward Persist(AlbumUpdated(album))
+        case DeleteAlbum(id) =>
+          self forward Persist(AlbumDeleted(id))
+        case AddPicture(id, pictureId) =>
+          self forward Persist(PictureAdded(id, pictureId))
+        case RemovePicture(id, pictureId) =>
+          self forward Persist(PictureRemoved(id, pictureId))
+      }
+    case Persist(albumEvent: AlbumEvent) =>
+      persist(albumEvent) { event =>
+        updateState(event)
+        context.system.eventStream.publish(event)
+        sender() ! event.successNel
+      }
+    //Queries
+    case ListAlbums =>
+      sender ! state.albums.values.toList
+    case GetAlbum(id) =>
+      sender ! state.albums.get(id)
+    case GetAlbumByUsername(username) =>
+      sender ! state.albums.values.filter(_.username == username)
+    case "snap" => saveSnapshot(state)
+    case "print" => println(state)
+  }
+}
+
+case class AlbumState(albums: Map[Albums.Id, Album] = Map.empty) {
+
+  def updated(evt: AlbumEvent): AlbumState = evt match {
+    case AlbumCreated(album) =>
+      AlbumState(albums + (album.id -> album))
+    case AlbumUpdated(album) =>
+      AlbumState(albums + (album.id -> album))
+    case AlbumDeleted(id) =>
+      AlbumState(albums.filterKeys(_ != id))
+    case PictureAdded(albumId, pictureId) =>
+      AlbumState(albums.map {
+        case (id, album) if id == albumId =>
+          (id, album.copy(pictureIds = pictureId :: album.pictureIds))
+        case any => any
+      })
+    case PictureRemoved(albumId, pictureId) =>
+      AlbumState(albums.map {
+        case (id, album) if id == albumId =>
+          (id, album.copy(pictureIds = album.pictureIds.filterNot(_ == pictureId)))
+        case any => any
+      })
+    case unknow =>
+      println(s"$unknow")
+      AlbumState(albums)
+  }
+
+  def size: Int = albums.size
+
+  override def toString: String = albums.toString
 }
