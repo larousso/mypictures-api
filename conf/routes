@@ -1,0 +1,42 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# An example controller showing a sample home page
+
+GET     /api/pictures/:pictureId                                                controllers.PicturesController.get(pictureId)
+GET     /api/albums/:albumId/pictures/:pictureId                                controllers.PicturesController.getByIdAndAlbum(albumId, pictureId)
+
+GET     /static/images/:id                                                      controllers.PicturesController.readImage(id)
+GET     /static/thumbnails/:id                                                  controllers.PicturesController.readThumbnail(id)
+
+GET     /auth/facebook                                                          controllers.SessionController.facebookRedirect(redirection: Option[String])
+GET     /auth/facebook/callback                                                 controllers.SessionController.facebookCallback(code: String)
+
+GET     /api/session                                                            controllers.SessionController.getSession
+POST    /api/login                                                              controllers.SessionController.doLogin
+
+GET     /api/accounts/:accountId                                                controllers.AccountsController.getById(accountId)
+
+GET     /api/accounts/:accountId/albums                                         controllers.AlbumsController.getAll(accountId)
+POST    /api/accounts/:accountId/albums                                         controllers.AlbumsController.create(accountId)
+PUT     /api/accounts/:accountId/albums/:albumId                                controllers.AlbumsController.updateAlbum(accountId, albumId)
+GET     /api/accounts/:accountId/albums/:albumId                                controllers.AlbumsController.getById(accountId, albumId)
+DELETE  /api/accounts/:accountId/albums/:albumId                                controllers.AlbumsController.deleteById(accountId, albumId)
+
+GET     /api/accounts/:accountId/albums/:albumId/pictures                       controllers.PicturesController.getAll(accountId, albumId)
+GET     /api/accounts/:accountId/albums/:albumId/pictures/:pictureId            controllers.PicturesController.getById(accountId, albumId, pictureId)
+POST    /api/accounts/:accountId/albums/:albumId/pictures/:pictureId            controllers.PicturesController.createPicture(accountId, albumId, pictureId)
+POST    /api/accounts/:accountId/albums/:albumId/pictures/:pictureId/_rotation  controllers.PicturesController.rotatePicture(accountId, albumId, pictureId)
+PUT     /api/accounts/:accountId/albums/:albumId/pictures/:pictureId            controllers.PicturesController.updatePicture(accountId, albumId, pictureId)
+DELETE  /api/accounts/:accountId/albums/:albumId/pictures/:pictureId            controllers.PicturesController.deletePicture(accountId, albumId, pictureId)
+
+GET     /api/accounts/:accountId/albums/:albumId/pictures/:pictureId/comments   controllers.CommentsController.getAll(accountId, albumId, pictureId)
+POST    /api/accounts/:accountId/albums/:albumId/pictures/:pictureId/comments   controllers.CommentsController.createComment(accountId, albumId, pictureId)
+GET     /api/accounts/:accountId/albums/:albumId/pictures/:pictureId/comments/:commentId   controllers.CommentsController.readComments(accountId, albumId, pictureId, commentId)
+PUT     /api/accounts/:accountId/albums/:albumId/pictures/:pictureId/comments/:commentId   controllers.CommentsController.updateComment(accountId, albumId, pictureId, commentId)
+DELETE  /api/accounts/:accountId/albums/:albumId/pictures/:pictureId/comments/:commentId   controllers.CommentsController.deleteComments(accountId, albumId, pictureId, commentId)
+
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

@@ -1,0 +1,20 @@
+option java_package = "app.generated.comment";
+option optimize_for = SPEED;
+
+message Comment {
+    required string id = 1;
+    required string pictureId = 2;
+    required string name = 3;
+    optional string comment = 4;
+    required int64 date = 5;
+}
+
+message CommentCreated {
+    required Comment comment = 1;
+}
+message CommentUpdated {
+    required Comment comment = 1;
+}
+message CommentDeleted {
+    required string id = 1;
+}

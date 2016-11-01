@@ -1,0 +1,14 @@
+option java_package = "app.generated.account";
+option optimize_for = SPEED;
+
+message Account {
+    required string username = 1;
+    required string password = 2;
+    required string name = 3;
+    required string surname = 4;
+    required string role = 5;
+}
+
+message AccountAdded {
+    required Account account = 1;
+}

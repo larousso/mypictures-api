@@ -1,0 +1,23 @@
+option java_package = "app.generated.picture";
+option optimize_for = SPEED;
+
+message Picture {
+    required string id = 1;
+    optional string title = 2;
+    required string filename = 3;
+    required bool preview = 4;
+    required string type = 5;
+    optional string description = 6;
+    required string album = 7;
+    optional string file = 8;
+}
+
+message PictureCreated {
+    required Picture picture = 1;
+}
+message PictureUpdated {
+    required Picture picture = 1;
+}
+message PictureDeleted {
+    required string id = 1;
+}
