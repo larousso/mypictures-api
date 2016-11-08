@@ -1,21 +1,19 @@
 package services.picture
 
 import akka.actor.{ActorSystem, Props}
-import akka.http.scaladsl.server._
 import akka.persistence.{PersistentActor, SnapshotOffer}
-import akka.stream.Materializer
-import akka.util.{ByteString, Timeout}
-import services.{Persist}
+import akka.util.Timeout
+import cats.data.{NonEmptyList => Nel, Validated}
+import play.api.libs.json.Json
 import services.Messages.{Cmd, Evt, Query}
-import services.account.Accounts.Role.Admin
+import services.Persist
 import services.album.Albums
 import services.picture.Images.Rotation
 import services.picture.Pictures._
-import org.json4s.{Formats, Serialization}
-import play.api.libs.json.Json
+import services.validation.ValidatedT
+import services.validation.Validation._
 
 import scala.concurrent.Future
-import scalaz.{Failure, Success}
 
 /**
   * Created by adelegue on 30/05/2016.
@@ -25,7 +23,6 @@ object Pictures {
   object Api {
 
     case class RotationAction(rotation: Images.Rotation) extends Serializable
-    import services.picture.Images._
     implicit val format = Json.format[RotationAction]
   }
 
@@ -67,45 +64,39 @@ object Pictures {
 
 class Pictures(albums: Albums, images: Images)(implicit val system: ActorSystem) {
 
-  import system.dispatcher
   import akka.pattern.ask
+  import cats.Applicative
+  import cats.implicits._
+  import cats.data.Validated._
+  import services.validation.ValidatedT._
   import services.validation.Validation._
+  import system.dispatcher
 
   import scala.concurrent.duration.DurationDouble
   implicit val timeout = Timeout(5.second)
 
   val ref = system.actorOf(PictureStoreActor.props, "Pictures")
 
-  def createPicture(picture: Picture, content: Array[Byte]): Future[Result[PictureCreated]] =
-    for {
-      ok <- validatePictureCreation(picture)
-      created <- ok.fold(
-        e => Future.successful(Failure(e)),
-        p => for {
-          _ <- images.createImage(picture.id, content)
-          _ <- images.createThumbnail(picture.id, content)
-          _ <- albums.addPicture(picture.album, picture.id)
-          created <- (ref ? CreatePicture(picture)).mapTo[Result[PictureCreated]]
-        } yield created
-      )
+  def createPicture(picture: Picture, content: Array[Byte]): Future[Result[PictureCreated]] = {
+    val res: ResultT[Future, PictureCreated] = for {
+      ok <- ValidatedT(validatePictureCreation(picture))
+      _ <- images.createImage(picture.id, content).liftT[ResultT]
+      _ <- images.createThumbnail(picture.id, content).liftT[ResultT]
+      _ <- ValidatedT(albums.addPicture(picture.album, picture.id))
+      created <- ValidatedT((ref ? CreatePicture(picture)).mapTo[Result[PictureCreated]])
     } yield created
-
+    res.value
+  }
 
   def updatePicture(picture: Picture): Future[Result[PictureUpdated]] =
     (ref ? UpdatePicture(picture)).mapTo[Result[PictureUpdated]]
 
-  def rotatePicture(id: Pictures.Id, rotation: Rotation): Future[Option[Picture]] = {
+  def rotatePicture(id: Pictures.Id, rotation: Rotation): Future[Result[Picture]] = {
     for {
       p <- getPicture(id)
-      _ <- p match {
-        case Some(_) =>
-          for {
-            _ <- images.rotateImage(id, rotation)
-            _ <- images.rotateThumbnail(id, rotation)
-          } yield Unit
-        case None => Future.successful(Unit)
-      }
-    } yield p
+      _ <- images.rotateImage(id, rotation).map(Some.apply)
+      _ <- images.rotateThumbnail(id, rotation).map(Some.apply)
+    } yield Validated.fromOption(p, Nel.of(Error("Picture not found")))
   }
 
   def deletePicturesByAlbum(albumId: Albums.Id): Future[List[Result[PictureDeleted]]] = {
@@ -150,41 +141,30 @@ class Pictures(albums: Albums, images: Images)(implicit val system: ActorSystem)
     } yield img.map(_.content)
 
   def validatePictureCreation(picture: Picture): Future[Result[Picture]] = {
-    import scalaz.Scalaz._
     for {
       albumExists <- validateAlbumExists(picture)
       pictureDoesntExist <- validatePictureDoesntExists(picture)
-    } yield (albumExists |@| pictureDoesntExist) { (_, _) => picture}
+    } yield Applicative[Result].map2(albumExists, pictureDoesntExist) { (_, _) => picture}
   }
 
   def validateAlbumExists(picture: Picture): Future[Result[Picture]] = {
-    import scalaz.Scalaz._
     for {
-      album <- albums.getAlbum(picture.album)
-    } yield album match {
-      case Some(a) => picture.successNel
-      case None => Error("L'album n'existe pas").failureNel
-    }
+      a <- albums.getAlbum(picture.album)
+    } yield Validated.fromOption(a, Nel.of(Error("L'album n'existe pas"))).map(_ => picture)
   }
 
   def validatePictureExists(picture: Picture): Future[Result[Picture]] = {
-    import scalaz.Scalaz._
     for {
       pict <- getPicture(picture.id)
-    } yield pict match {
-      case Some(e) => picture.successNel
-      case None => Error("L'image n'existe pas").failureNel
-    }
+    } yield Validated.fromOption(pict, Nel.of(Error("L'image n'existe pas")))
   }
 
   def validatePictureDoesntExists(picture: Picture): Future[Result[Picture]] = {
-    import scalaz.Scalaz._
     for {
       pict <- getPicture(picture.id)
-    } yield pict match {
-      case Some(e) => Error("L'image existe déjà").failureNel
-      case None => picture.successNel
-    }
+    } yield pict
+        .map(_ => invalidNel(Error("L'image existe déjà")))
+        .getOrElse(valid(picture))
   }
 }
 
@@ -195,7 +175,7 @@ object PictureStoreActor {
 }
 
 class PictureStoreActor extends PersistentActor {
-  import scalaz.Scalaz._
+  import cats.data.Validated._
 
   override def persistenceId: String = "pictures"
 
@@ -223,7 +203,7 @@ class PictureStoreActor extends PersistentActor {
       persist(pictureEvent) { event =>
         updateState(event)
         context.system.eventStream.publish(event)
-        sender() ! event.successNel
+        sender() ! valid(event)
       }
     case ListPictures =>
       sender ! state.pictures.values.toList

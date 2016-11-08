@@ -67,6 +67,7 @@ class Accounts()(implicit val system: ActorSystem) {
   import Accounts._
   import akka.pattern.ask
   import system.dispatcher
+  import cats.data.Validated._
 
   import scala.concurrent.duration.DurationDouble
   implicit val timeout = Timeout(5.second)
@@ -76,11 +77,10 @@ class Accounts()(implicit val system: ActorSystem) {
     (ref ? AddAccount(account)).mapTo[Result[AccountAdded]]
 
   def createOrUpdateAccount(account: Account): Future[Result[Accounts.AccountAdded]] = {
-    import scalaz.Scalaz._
     for {
       a <- getAccountByUsername(account.username)
       r <- a match {
-        case Some(_) => Future.successful[Result[Accounts.AccountAdded]](AccountAdded(account).successNel)
+        case Some(_) => Future.successful[Result[Accounts.AccountAdded]](valid(AccountAdded(account)))
         case None => addAccount(account)
       }
     } yield r
@@ -100,7 +100,7 @@ object AccountStoreActor {
 
 class AccountStoreActor extends PersistentActor {
 
-  import scalaz.Scalaz._
+  import cats.data.Validated._
   override def persistenceId: String = "accounts"
 
   var state = AccountState()
@@ -124,7 +124,7 @@ class AccountStoreActor extends PersistentActor {
       persist(accountEvent) { event =>
         updateState(event)
         context.system.eventStream.publish(event)
-        sender() ! event.successNel
+        sender() ! valid(event)
       }
     case ListAll =>
       sender ! state.accounts.values.toList

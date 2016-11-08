@@ -5,8 +5,6 @@ import java.nio.file.Files
 
 import com.sksamuel.scrimage
 import com.sksamuel.scrimage.nio.JpegWriter
-import org.json4s.CustomSerializer
-import org.json4s.JsonAST.JString
 import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,19 +33,6 @@ object Images {
       case Left => JsString("left")
     }
   )
-
-
-  class RotationSerializer extends CustomSerializer[Rotation](format => ({
-      case JString(s) if s == "right" =>
-        Right
-      case JString(s) if s == "left" =>
-        Left
-    }, {
-      case Right =>
-        JString("right")
-      case Left =>
-        JString("left")
-  }))
 }
 
 class Images(basePath: String)(implicit val ec: ExecutionContext) {

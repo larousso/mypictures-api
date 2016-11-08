@@ -20,7 +20,7 @@ class SessionController(accounts: Accounts, facebookAuth: FacebookAuth, config: 
 
 
   def getSession() = Action { request =>
-      Logger.info(s"${request.session} - ${request.cookies}")
+      Logger.debug(s"${request.session} - ${request.cookies}")
       request.session.get("user").map { u =>
         Ok((Json.parse(u) \ "user").as[JsObject])
       } getOrElse NotFound

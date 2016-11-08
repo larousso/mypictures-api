@@ -3,7 +3,7 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.json.{JsError, JsResult, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{Action, BodyParsers, Controller}
@@ -12,7 +12,9 @@ import services.account.Accounts.Role.Admin
 import services.picture.Pictures
 
 import scala.concurrent.{ExecutionContext, Future}
-import scalaz.{Failure, Success}
+import cats.data.Validated._
+import services.picture.Pictures.Api.RotationAction
+import services.validation.ValidatedT
 
 /**
   * Created by adelegue on 30/10/2016.
@@ -81,8 +83,8 @@ class PicturesController(pictures: Pictures, actorSystem: ActorSystem)(implicit 
         val imgType: Pictures.Type = "image/jpeg"
         val picture = Pictures.Picture(pictureId, filename, imgType, albumId)
         pictures.createPicture(picture, file).map {
-          case Success(p) => Created(Json.toJson(p.picture))
-          case Failure(e) => BadRequest
+          case Valid(p) => Created(Json.toJson(p.picture))
+          case Invalid(e) => BadRequest
         }
     }.getOrElse(
       Future.successful(BadRequest)
@@ -93,26 +95,24 @@ class PicturesController(pictures: Pictures, actorSystem: ActorSystem)(implicit 
 
   def update(albumId: String, pictureId: String) = AuthAction(Admin).async(parse.json) { request =>
     import Pictures._
-    request.body.validate[Pictures.Picture].fold(
-      errors => Future.successful(BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toJson(errors)))),
-      picture => pictures.updatePicture(picture).map {
-        case Success(p) => Ok(Json.toJson(p.picture))
-        case Failure(e) => BadRequest
-      }
-    )
+    import cats.implicits._
+    val jsResult: JsResult[Picture] = request.body.validate[Picture]
+    (for {
+      picture <- ValidatedT.fromJsResult[Future](jsResult, errors => BadRequest(JsError.toJson(errors)))
+      updated <- ValidatedT(pictures.updatePicture(picture)).invalidMap(e => BadRequest(""))
+    } yield Ok(Json.toJson(updated.picture))).merge
   }
 
   def rotatePicture(accountId: String, albumId: String, pictureId: String) = rotate(albumId, pictureId)
 
   def rotate(albumId: String, pictureId: String) = AuthAction(Admin).async(BodyParsers.parse.json) { request =>
     import Pictures._
-    request.body.validate[Api.RotationAction](Api.format).fold(
-      errors => Future.successful(BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toJson(errors)))),
-      action => pictures.rotatePicture(pictureId, action.rotation).map {
-        case Some(p) => Ok(Json.toJson(p))
-        case None => NotFound(pictureId)
-      }
-    )
+    import cats.implicits._
+    val jsResult: JsResult[RotationAction] = request.body.validate[RotationAction](Api.format)
+    (for {
+      action <- ValidatedT.fromJsResult[Future](jsResult, errors => BadRequest(JsError.toJson(errors)))
+      updated <- ValidatedT(pictures.rotatePicture(pictureId, action.rotation)).invalidMap(e => BadRequest(""))
+    } yield Ok(Json.toJson(updated))).merge
   }
 
 }

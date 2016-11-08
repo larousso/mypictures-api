@@ -3,12 +3,12 @@ package controllers
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import cats.data.Validated._
 import play.api.libs.json.{JsError, Json}
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Controller
 import services.comment.Comments
 
 import scala.concurrent.{ExecutionContext, Future}
-import scalaz.{Failure, Success}
 
 /**
   * Created by adelegue on 30/10/2016.
@@ -29,8 +29,8 @@ class CommentsController(comments: Comments, actorSystem: ActorSystem)(implicit 
       {
         case Comments.Api.Comment(name, comment, date) =>
           comments.createComment(Comments.Comment(UUID.randomUUID.toString, pictureId, name, comment, date)).map {
-            case Success(c) => Created(Json.toJson(c.comment))
-            case Failure(e) => BadRequest
+            case Valid(c) => Created(Json.toJson(c.comment))
+            case Invalid(e) => BadRequest
           }
       }
     )
@@ -40,8 +40,8 @@ class CommentsController(comments: Comments, actorSystem: ActorSystem)(implicit 
     request.body.validate[Comments.Comment](Comments.format).fold(
       errors => Future.successful(BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toJson(errors)))),
       c => comments.updateComment(c).map {
-          case Success(c) => Created(Json.toJson(c.comment))
-          case Failure(e) => BadRequest
+          case Valid(c) => Created(Json.toJson(c.comment))
+          case Invalid(e) => BadRequest
         }
     )
   }

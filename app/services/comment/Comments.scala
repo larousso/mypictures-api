@@ -9,12 +9,11 @@ import akka.util.Timeout
 import services.Messages.{Cmd, Evt, Query}
 import services.comment.Comments._
 import services.picture.Pictures
-import services.{Persist, UnknowEventException}
-import org.json4s.{Formats, Serialization}
+import services.{Persist, UnknowEventException, validation}
 import play.api.libs.json.Json
+import services.validation.ValidatedT
 
 import scala.concurrent.{ExecutionContext, Future}
-import scalaz.{Failure, Success}
 
 /**
   * Created by adelegue on 17/07/2016.
@@ -54,6 +53,10 @@ class Comments(pictures: Pictures)(implicit val system: ActorSystem) {
   import system.dispatcher
   import akka.pattern.ask
   import services.validation.Validation._
+  import cats.Applicative
+  import cats.data.Validated._
+  import cats.implicits._
+
 
   import scala.concurrent.duration.DurationDouble
   implicit val timeout = Timeout(5.second)
@@ -68,27 +71,17 @@ class Comments(pictures: Pictures)(implicit val system: ActorSystem) {
 
 
   def createComment(comment: Comment): Future[Result[CommentCreated]] = {
-    for {
-      validated <- validatePictureExists(comment)
-      added <- validated.fold(
-        e => Future.successful(Failure(e)),
-        c => for {
-          a <- (ref ? CreateComment(comment)).mapTo[Result[CommentCreated]]
-        } yield a
-      )
-    } yield added
+    (for {
+      validated <- ValidatedT(validatePictureExists(comment))
+      added <- ValidatedT((ref ? CreateComment(comment)).mapTo[Result[CommentCreated]])
+    } yield added).value
   }
 
   def updateComment(comment: Comment): Future[Result[CommentUpdated]] = {
-    for {
-      validated <- validateCommentUpdate(comment)
-      added <- validated.fold(
-        e => Future.successful(Failure(e)),
-        c => for {
-          a <- (ref ? UpdateComment(comment)).mapTo[Result[CommentUpdated]]
-        } yield a
-      )
-    } yield added
+    (for {
+      validated <- ValidatedT(validateCommentUpdate(comment))
+      added <- ValidatedT((ref ? UpdateComment(comment)).mapTo[Result[CommentUpdated]])
+    } yield added).value
   }
 
   def deleteComment(id: Comments.Id): Future[Result[CommentDeleted]] =
@@ -96,31 +89,22 @@ class Comments(pictures: Pictures)(implicit val system: ActorSystem) {
 
 
   def validateCommentExists(comment: Comment) : Future[Result[Comment]] = {
-    import scalaz.Scalaz._
     for {
       mayBe <- getComment(comment.id)
-    } yield mayBe match {
-      case Some(c) => c.successNel
-      case None => Error("Le commentaire n'existe pas").failureNel
-    }
+    } yield mayBe.map(valid).getOrElse(invalidNel(Error("Le commentaire n'existe pas")))
   }
 
   def validateCommentUpdate(comment: Comment) : Future[Result[Comment]] = {
-    import scalaz.Scalaz._
     for {
       exists <- validateCommentExists(comment)
       pExists <- validatePictureExists(comment)
-    } yield (exists |@| pExists) { (_, _) => comment }
+    } yield Applicative[Result].map2(exists, pExists) { (_, _) => comment }
   }
 
   def validatePictureExists(comment: Comment): Future[Result[Comment]] = {
-    import scalaz.Scalaz._
     for {
       picture <- pictures.getPicture(comment.pictureId)
-    } yield picture match {
-      case Some(a) => comment.successNel
-      case None => Error("L'image n'existe pas").failureNel
-    }
+    } yield picture.map(_ => valid(comment)).getOrElse(invalidNel(Error("L'image n'existe pas")))
   }
 }
 
@@ -131,7 +115,7 @@ object CommentStoreActor {
 }
 
 class CommentStoreActor extends PersistentActor {
-  import scalaz.Scalaz._
+  import cats.data.Validated._
   implicit val ec: ExecutionContext = context.system.dispatcher
 
   override def persistenceId: String = "comments"
@@ -160,7 +144,7 @@ class CommentStoreActor extends PersistentActor {
       persist(albumEvent) { event =>
         updateState(event)
         context.system.eventStream.publish(event)
-        sender() ! event.successNel
+        sender() ! valid(event)
       }
     //Queries
     case GetComment(id) =>

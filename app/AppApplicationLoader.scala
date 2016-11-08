@@ -12,7 +12,7 @@ import services.account.Accounts.Role
 import services.album.Albums
 import services.comment.Comments
 import services.picture.{Images, Pictures}
-import play.filters.cors.{CORSComponents}
+import play.filters.cors.CORSComponents
 
 class AppApplicationLoader extends ApplicationLoader {
   def load(context: Context) = {

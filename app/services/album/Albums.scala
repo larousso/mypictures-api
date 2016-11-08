@@ -5,15 +5,16 @@ import java.util.Date
 import akka.actor.{ActorSystem, Props}
 import akka.persistence.{PersistentActor, SnapshotOffer}
 import akka.util.Timeout
+import cats.Apply
 import play.api.libs.json.Json
 import services.Messages.{Cmd, Evt, Query}
 import services.Persist
 import services.account.Accounts
 import services.album.Albums._
 import services.picture.Pictures
+import services.validation.ValidatedT
 
 import scala.concurrent.{ExecutionContext, Future}
-import scalaz.Failure
 
 /**
   * Created by adelegue on 28/05/2016.
@@ -61,38 +62,34 @@ class Albums(accounts: Accounts)(implicit val system: ActorSystem) {
   import akka.pattern.ask
   import services.validation.Validation._
   import system.dispatcher
-
+  import cats.data.Validated._
+  import cats.implicits._
+  import cats.syntax.apply._
   import scala.concurrent.duration.DurationDouble
-  import scalaz.Scalaz._
+
   implicit val timeout = Timeout(5.second)
 
   val ref = system.actorOf(AlbumStoreActor.props, "Albums")
 
-  def createAlbum(album: Album): Future[Result[AlbumCreated]] =
-    for {
-      validatedAlbum <- validateAlbumCreation(album)
-      command <- validatedAlbum.fold(
-        e => Future.successful(Failure(e)),
-        s => (ref ? CreateAlbum(album)).mapTo[Result[AlbumCreated]]
-      )
-    } yield command
+  def createAlbum(album: Album): Future[Result[AlbumCreated]] = {
+    (for {
+      validatedAlbum <- ValidatedT(validateAlbumCreation(album))
+      command <- ValidatedT((ref ? CreateAlbum(album)).mapTo[Result[AlbumCreated]])
+    } yield command).value
+  }
+
 
   def updateAlbum(album: Album): Future[Result[AlbumUpdated]] =
-    for {
-      validatedAlbum <- validateAlbumUpdate(album)
-      command <- validatedAlbum.fold(
-        e => Future.successful(Failure(e)),
-        s => (ref ? UpdateAlbum(album)).mapTo[Result[AlbumUpdated]]
-      )
-    } yield command
+    (for {
+      validatedAlbum <- ValidatedT(validateAlbumUpdate(album))
+      command <- ValidatedT((ref ? UpdateAlbum(album)).mapTo[Result[AlbumUpdated]])
+    } yield command).value
 
   def addPicture(albumId: Albums.Id, pictureId: Pictures.Id): Future[Result[PictureAdded]] =
     (ref ? AddPicture(albumId, pictureId)).mapTo[Result[PictureAdded]]
 
-
   def removePicture(albumId: Albums.Id, pictureId: Pictures.Id): Future[Result[PictureRemoved]] =
     (ref ? RemovePicture(albumId, pictureId)).mapTo[Result[PictureRemoved]]
-
 
   def deleteAlbum(id: Albums.Id): Future[Result[AlbumDeleted]] =
     (ref ? DeleteAlbum(id)).mapTo[Result[AlbumDeleted]]
@@ -107,31 +104,37 @@ class Albums(accounts: Accounts)(implicit val system: ActorSystem) {
     (ref ? ListAlbums).mapTo[List[Album]]
 
 
-
   def validateAlbumCreation(album: Album): Future[Result[Album]] =
     for {
       username <- validateUsername(album)
       alreadyExists <- validateNotExists(album)
-    } yield (username |@| alreadyExists) { (_, _) => album }
-
+//    } yield Applicative[Result].map2(username, alreadyExists) { (_, _) => album }
+    } yield Apply[Result].map2(username, alreadyExists) { (_, _) => album }
+//    } yield (username |@| alreadyExists).map { (_, _) => album }
 
   def validateAlbumUpdate(album: Album): Future[Result[Album]] =
     for {
       username <- validateUsername(album)
       alreadyExists <- validateExists(album)
-    } yield (username |@| alreadyExists) { (_, _) => album }
+    } yield Apply[Result].map2(username, alreadyExists) { (_, _) => album }
 
   def validateUsername(album: Album): Future[Result[Album]] =
     accounts.getAccountByUsername(album.username).map {
-      case Some(a) => album.successNel
-      case None => Error(s"L'utilisateur ${album.username} n'existe pas").failureNel
+      case Some(a) => valid(album)
+      case None => invalidNel(Error(s"L'utilisateur ${album.username} n'existe pas"))
     }
 
   def validateNotExists(album: Album): Future[Result[Album]] =
-    albumExists(album).map { exists => if (exists) Error("L'album existe déjà").failureNel else album.successNel }
+    albumExists(album).map {
+      case true => invalidNel(Error("L'album existe déjà"))
+      case false => valid(album)
+    }
 
   def validateExists(album: Album): Future[Result[Album]] =
-    albumExists(album).map { exists => if (!exists) Error("L'album n'existe pas").failureNel else album.successNel }
+    albumExists(album).map {
+      case false => invalidNel(Error("L'album n'existe pas"))
+      case true => valid(album)
+    }
 
   def albumExists(album: Album): Future[Boolean] =
     for {
@@ -147,7 +150,7 @@ object AlbumStoreActor {
 
 class AlbumStoreActor extends PersistentActor {
 
-  import scalaz.Scalaz._
+  import cats.data.Validated._
   implicit val ec: ExecutionContext = context.system.dispatcher
 
   override def persistenceId: String = "albums"
@@ -183,7 +186,7 @@ class AlbumStoreActor extends PersistentActor {
       persist(albumEvent) { event =>
         updateState(event)
         context.system.eventStream.publish(event)
-        sender() ! event.successNel
+        sender() ! valid(event)
       }
     case query: AlbumQuery =>
       query match {

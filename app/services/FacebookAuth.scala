@@ -7,7 +7,6 @@ import akka.http.scaladsl.Http.HostConnectionPool
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import org.json4s.{DefaultFormats, jackson}
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
@@ -20,8 +19,6 @@ import scala.util.Try
 class FacebookAuth(redirectUrl: String, appId: String, appSecret: String)(implicit val system: ActorSystem) {
 
   import system.dispatcher
-  implicit val serialization = jackson.Serialization
-  implicit val formats = DefaultFormats
 
   implicit val materializer = ActorMaterializer()
   private val httpClient: Flow[(HttpRequest, NotUsed), (Try[HttpResponse], NotUsed), HostConnectionPool] = Http().cachedHostConnectionPoolHttps[NotUsed](host = "graph.facebook.com")
