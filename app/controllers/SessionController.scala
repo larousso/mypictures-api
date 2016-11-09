@@ -1,13 +1,16 @@
 package controllers
 
 import akka.actor.ActorSystem
+import cats.{Functor, FunctorFilter}
+import cats.data.OptionT
 import play.api.{Configuration, Logger}
 import play.api.libs.json._
-import play.api.mvc.{Action, BodyParsers, Controller, Request}
+import play.api.mvc._
 import services.FacebookAuth
 import services.account.Accounts
 import services.account.Accounts.Role.Guest
 import services.account.Accounts.{Role, _}
+import services.validation.ValidatedT
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,23 +30,22 @@ class SessionController(accounts: Accounts, facebookAuth: FacebookAuth, config: 
   }
 
   def doLogin() = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[LoginForm].fold(
-      errors => Future.successful(BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toJson(errors)))),
-      login => {
-        val mayBeLogin = for {
-          username <- login.username
-          password <- login.password
-        } yield {
-          accounts.getAccountByUsername(username).map {
-            case Some(a) if password == a.password =>
-              val session = Session(user = Some(SessionUser(a.username, a.role, Custom)))
-              val sessionJson: JsValue = Json.toJson(session)
-              Ok(sessionJson).withNewSession.withSession("user" -> Json.stringify(sessionJson))
-            case _ => Forbidden(Json.obj("message" -> "Erreur de login ou de mot de passe"))
-          }
-        }
-        mayBeLogin getOrElse Future.successful(Forbidden(Json.obj("message" -> "Erreur de login ou de mot de passe")))
-      })
+    import cats.implicits._
+    val jsResult: JsResult[LoginForm] = request.body.validate[LoginForm]
+    val forbiddenMsg: Result = Forbidden(Json.obj("message" -> "Erreur de login ou de mot de passe"))
+    (for {
+      login <- ValidatedT.fromJsResult[Future](jsResult, errors => BadRequest(JsError.toJson(errors)))
+      username <- ValidatedT.fromOption[Future](login.username, forbiddenMsg)
+      password <- ValidatedT.fromOption[Future](login.password, forbiddenMsg)
+      account <- ValidatedT.fromOptionF[Future](accounts.getAccountByUsername(username), forbiddenMsg)
+    } yield if (password == account.password) {
+        val session = Session(user = Some(SessionUser(account.username, account.role, Custom)))
+        val sessionJson: JsValue = Json.toJson(session)
+        Ok(sessionJson).withNewSession.withSession("user" -> Json.stringify(sessionJson))
+      } else {
+        forbiddenMsg
+      }
+    ).merge
   }
 
   def facebookRedirect(redirection: Option[String]) = Action {
@@ -57,16 +59,16 @@ class SessionController(accounts: Accounts, facebookAuth: FacebookAuth, config: 
       token <- facebookAuth.accessToken(code).map { json => (json \ "access_token").as[String] }
       fbName <- facebookAuth.me(token).map { json => (json \ "name").as[String] }
     } yield Session.parseSession(request) match {
-          case Some(s) =>
-            val red = s.redirect.getOrElse(defaultRedirect)
-            val session = Session(user = Some(SessionUser(fbName, Guest, Facebook)))
-            val sessionJson: JsValue = Json.toJson(session)
-            SeeOther(red).withSession("user" -> Json.stringify(sessionJson))
-          case None =>
-            val session = Session(user = Some(SessionUser(fbName, Guest, Facebook)))
-            val sessionJson: JsValue = Json.toJson(session)
-            SeeOther(defaultRedirect).withSession("user" -> Json.stringify(sessionJson))
-        }
+      case Some(s) =>
+        val red = s.redirect.getOrElse(defaultRedirect)
+        val session = Session(user = Some(SessionUser(fbName, Guest, Facebook)))
+        val sessionJson: JsValue = Json.toJson(session)
+        SeeOther(red).withSession("user" -> Json.stringify(sessionJson))
+      case None =>
+        val session = Session(user = Some(SessionUser(fbName, Guest, Facebook)))
+        val sessionJson: JsValue = Json.toJson(session)
+        SeeOther(defaultRedirect).withSession("user" -> Json.stringify(sessionJson))
+    }
   }
 
 }

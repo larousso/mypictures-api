@@ -106,6 +106,11 @@ case class ValidatedT[F[_], E, A](value: F[Validated[E, A]]) {
 
   def merge(implicit ev: A <:< E, F: Functor[F]): F[E] = F.map(value)(_.fold(identity, ev.apply))
 
+
+//  def withFilter(f: A => Boolean)(implicit F: Monad[F]) = F.filter(value){
+//    case Valid(e) => f(e)
+//    case Invalid(_) => false
+//  }
 }
 
 object ValidatedT extends ValidatedTInstances with ValidatedTFunctions { }
