@@ -31,6 +31,7 @@ class SessionController(accounts: Accounts, facebookAuth: FacebookAuth, config: 
 
   def doLogin() = Action.async(BodyParsers.parse.json) { request =>
     import cats.implicits._
+
     val jsResult: JsResult[LoginForm] = request.body.validate[LoginForm]
     val forbiddenMsg: Result = Forbidden(Json.obj("message" -> "Erreur de login ou de mot de passe"))
     (for {
