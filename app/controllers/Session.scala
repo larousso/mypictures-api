@@ -1,5 +1,7 @@
 package controllers
 
+import java.util.Base64
+
 import play.api.libs.json._
 import play.api.mvc.Request
 import services.account.Accounts.{Role, Username}
@@ -48,15 +50,23 @@ object SessionUser {
   implicit val format = Json.format[SessionUser]
 }
 
-case class Session(user: Option[SessionUser], redirect: Option[String] = None)
+case class Session(user: Option[SessionUser], redirect: Option[String] = None) {
+  def stringify = Session.stringify(this)
+}
 
 object Session {
   import SessionType._
   import SessionUser._
   implicit val sessionFormat = Json.format[Session]
 
+  def stringify(session: Session) = {
+    val sessionJson: JsValue = Json.toJson(session)
+    Base64.getEncoder.encodeToString(Json.stringify(sessionJson).getBytes)
+  }
+
   def parseSession(request: Request[_]): Option[Session] =
     request.session.get("user")
+      .map(s => new String(Base64.getDecoder.decode(s)))
       .map(Json.parse)
       .map(sessionFormat.reads)
       .flatMap(jsResult => jsResult.asOpt)
